@@ -26,13 +26,17 @@ class FAISSVectorStore:
         return self._metadata_path or str(config.METADATA_STORE_PATH)
 
     def build_index(self, documents: List[DocumentChunk]):
-        """Builds a FAISS index from a list of DocumentChunks."""
+        """Builds a FAISS index from a list of DocumentChunks with title-contextualized embeddings."""
         if not documents:
             logger.warning("No documents provided to build vector index.")
             return
 
         self.documents = documents
-        texts = [doc.text for doc in documents]
+        # Embed with Title prefix to maximize dense semantic matching precision
+        texts = [
+            f"{doc.title}: {doc.text}" if doc.title and not doc.text.startswith(doc.title) else doc.text 
+            for doc in documents
+        ]
         logger.info(f"Generating embeddings for {len(texts)} document chunks...")
         embeddings = embedding_service.encode(texts, normalize_embeddings=True)
         self.dimension = embeddings.shape[1]
@@ -41,7 +45,7 @@ class FAISSVectorStore:
             import faiss
             logger.info(f"Initializing FAISS IndexFlatIP (dim={self.dimension})...")
             index = faiss.IndexFlatIP(self.dimension)
-            index.add(embeddings)
+            index.add(embeddings.astype(np.float32))
             self.index = index
         except Exception as e:
             logger.warning(f"FAISS package not available or index build failed: {e}. Using NumPy Flat Vector Store fallback.")
