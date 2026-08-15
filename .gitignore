@@ -1,0 +1,27 @@
+# Python / Environment
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Data & Models
+data/raw/
+data/processed/
+data/index/
+*.parquet
+*.faiss
+*.pkl
+.cache/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+logs/
