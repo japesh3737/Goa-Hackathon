@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSMARCO-XI · Spoken AI Knowledge Scroll</title>
+    <meta name="description" content="Lush Goa Heritage Spoken Voice RAG Agent powered by AI4Bharat MSMARCO-XI, FAISS vector search, and Gemini/Groq LLM.">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ============================================================
+         BACKGROUND AMBIENT ATMOSPHERE (Deep Botanical Jungle)
+    ============================================================= -->
+    <div class="ambient-bg">
+        <div class="ambient-glow ambient-glow--1"></div>
+        <div class="ambient-glow ambient-glow--2"></div>
+        <div class="palm-silhouette-left"></div>
+        <div class="palm-silhouette-right"></div>
+    </div>
+
+    <!-- ============================================================
+         1. PINNED SCROLL GATE HERO (Opens & Closes with Spindles)
+    ============================================================= -->
+    <div class="scroll-gate-section" id="scroll-unroll-hero">
+        <div class="scroll-gate-container">
+            
+            <!-- TOP WOODEN ROLLER SPINDLE (Attached to top opening edge) -->
+            <div class="spindle spindle--top" id="top-spindle">
+                <div class="finial finial--left">
+                    <div class="finial-cap"></div>
+                    <div class="finial-body"></div>
+                    <div class="finial-ring"></div>
+                </div>
+                <div class="spindle-rod">
+                    <div class="rod-wood-grain"></div>
+                    <div class="rod-rolled-paper">
+                        <span class="rod-tag">MSMARCO‑XI · 2026</span>
+                        <div class="rod-accent-line"></div>
+                    </div>
+                </div>
+                <div class="finial finial--right">
+                    <div class="finial-ring"></div>
+                    <div class="finial-body"></div>
+                    <div class="finial-cap"></div>
+                </div>
+            </div>
+
+            <!-- PARCHMENT OPENING WINDOW (Expands/unrolls between spindles) -->
+            <div class="parchment-gate-viewport" id="parchment-gate">
+                <div class="deckle-edge deckle-edge--left"></div>
+                <div class="deckle-edge deckle-edge--right"></div>
+                
+                <div class="parallax__layers" data-parallax-layers>
+                    <div data-parallax-layer="1" class="parallax__layer parallax__layer--bg"></div>
+                    <div data-parallax-layer="2" class="parallax__layer parallax__layer--grid"></div>
+                    <div data-parallax-layer="3" class="parallax__layer-title">
+                        <button id="hero-mic-btn" class="parallax__logo-icon" aria-label="Scroll to Voice Oracle" title="Click to scroll to Voice Oracle">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="23"/>
+                            </svg>
+                        </button>
+                        <div class="hero-heritage-tag">
+                            <span class="badge-gold">ai4bharat</span>
+                            <span class="badge-accent">गोवा · RAG</span>
+                            <span class="badge-gold">MSMARCO‑XI</span>
+                        </div>
+                        <h1 class="parallax__title">KNOWLEDGE <span class="title-accent-glow">ORACLE</span><br><span class="title-sub-row">OF THE SUNSHINE STATE</span></h1>
+                        <p class="parallax__subtitle">Spoken Conversational Intelligence · Powered by Dense Vector Neural Retrieval</p>
+                    </div>
+                    <div data-parallax-layer="4" class="parallax__layer parallax__layer--fg"></div>
+                </div>
+            </div>
+
+            <!-- BOTTOM WOODEN ROLLER SPINDLE (Attached to bottom opening edge) -->
+            <div class="spindle spindle--bottom" id="bottom-spindle">
+                <div class="finial finial--left">
+                    <div class="finial-cap"></div>
+                    <div class="finial-body"></div>
+                    <div class="finial-ring"></div>
+                </div>
+                <div class="spindle-rod">
+                    <div class="rod-wood-grain"></div>
+                    <div class="rod-rolled-paper rod-rolled-paper--bottom">
+                        <div class="rod-accent-line"></div>
+                        <span class="rod-tag">SEA · SUN · SIGNAL · 2026</span>
+                    </div>
+                </div>
+                <div class="finial finial--right">
+                    <div class="finial-ring"></div>
+                    <div class="finial-body"></div>
+                    <div class="finial-cap"></div>
+                </div>
+            </div>
+
+            <!-- Scroll unroll prompt CTA -->
+            <div class="scroll-unroll-prompt" id="hero-scroll-cta" role="button" tabindex="0" title="Click to unroll the knowledge scroll">
+                <span class="scroll-cta-label">Scroll to unroll the sanctuary</span>
+                <div class="scroll-arrow-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12l7 7 7-7"/>
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+         2. THE UNROLLED SANCTUARY (MAIN APP / ORACLE CHAMBER)
+    ============================================================= -->
+    <div class="scroll-viewport-container" id="main-app">
+        <div class="parchment-body" id="parchment-content">
+            <!-- Deckle Torn Edge Overlays -->
+            <div class="deckle-edge deckle-edge--left"></div>
+            <div class="deckle-edge deckle-edge--right"></div>
+
+            <!-- PARCHMENT INNER CONTENT -->
+            <div class="parchment-inner">
+
+                <!-- 1. SCROLL HEADER BAR -->
+                <header class="scroll-header">
+                    <div class="header-stamp">
+                        <span class="stamp-location">GOA, INDIA</span>
+                        <span class="stamp-divider">·</span>
+                        <span class="stamp-edition">SPOKEN KNOWLEDGE SCROLL</span>
+                    </div>
+                    <div class="header-actions">
+                        <button id="clear-memory-btn" class="btn-royal-secondary" title="Reset conversational history">
+                            Clear Memory
+                        </button>
+                        <div class="heritage-status-pill" id="system-status-pill">
+                            <span class="status-gem pulse"></span>
+                            <span id="status-text">System Active · 2000 Docs</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- 2. CENTERPIECE: GOLDEN SOLAR WEBGL VOICE STAGE -->
+                <section class="voice-sanctuary-stage">
+                    <div class="stage-ornament-header">
+                        <div class="ornament-line"></div>
+                        <span class="ornament-glyph">✦</span>
+                        <h2 class="stage-heading">Voice Oracle Chamber</h2>
+                        <span class="ornament-glyph">✦</span>
+                        <div class="ornament-line"></div>
+                    </div>
+
+                    <!-- Glowing Golden WebGL Orb (Compact Base -> Massive Speech Expansion) -->
+                    <div class="golden-sphere-container">
+                        <div class="voice-dictator-wrapper golden-orb" id="mic-btn" role="button" tabindex="0" title="Click anywhere on the golden orb to speak">
+                            <canvas id="voice-canvas"></canvas>
+                        </div>
+
+                        <div class="voice-status-wrapper">
+                            <h3 id="voice-status-label" class="oracle-status-text">Tap sphere to speak</h3>
+                            <p class="oracle-subhint">Click the glowing oracle sphere to chant your query aloud</p>
+                        </div>
+                    </div>
+
+                    <!-- Spoken Transcription Scroll Card -->
+                    <div class="spoken-transcript-card hidden" id="transcription-card">
+                        <div class="transcript-header">
+                            <span class="transcript-seal">🗣️</span>
+                            <span class="transcript-label">Inscribed Words:</span>
+                        </div>
+                        <div id="transcription-text" class="transcript-content"></div>
+                    </div>
+                </section>
+
+                <!-- 3. GROUNDED AGENT REVELATION (RESULTS PANEL) -->
+                <section class="oracle-revelation-panel">
+                    <!-- Grounded Response Card -->
+                    <div class="card manuscript-card result-card hidden" id="result-card">
+                        <div class="result-header">
+                            <div class="card-title-group">
+                                <span class="card-icon">📜</span>
+                                <h2>Grounded Revelation</h2>
+                            </div>
+                            <div class="audio-control-wrapper">
+                                <button class="btn-royal-secondary btn-sm hidden" id="replay-audio-btn">
+                                    🔊 Chanted Answer
+                                </button>
+                                <button class="btn-royal-secondary btn-sm" id="copy-ans-btn">
+                                    <span id="copy-btn-text">Copy Inscription</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="answer-scroll-box" id="answer-content"></div>
+                        <div class="performance-bar heritage-performance" id="performance-bar"></div>
+                    </div>
+
+                    <!-- Retrieved Sources Card -->
+                    <div class="card manuscript-card sources-card hidden" id="sources-card">
+                        <div class="sources-header">
+                            <div class="card-title-group">
+                                <span class="card-icon">🏛️</span>
+                                <h2>Retrieved Evidence Manuscripts (<span id="sources-count">0</span>)</h2>
+                            </div>
+                        </div>
+                        <div class="sources-list" id="sources-list"></div>
+                    </div>
+
+                    <!-- Placeholder Chamber State -->
+                    <div class="placeholder-state heritage-placeholder" id="placeholder-state">
+                        <div class="placeholder-icon">🪷</div>
+                        <h3>The Oracle Awaits</h3>
+                        <p>Speak to the golden sphere above to awaken ancient knowledge, or inscribe a written question in the scroll below.</p>
+                    </div>
+                </section>
+
+                <!-- 4. SECONDARY GRIDS: TEXT FALLBACK & SETTINGS -->
+                <section class="secondary-manuscript-grid">
+                    <!-- Written Text Input Card -->
+                    <div class="card manuscript-card">
+                        <div class="card-title-group">
+                            <span class="card-icon">✍️</span>
+                            <h3 class="card-title">Written Query Inscription</h3>
+                        </div>
+                        <form id="rag-form">
+                            <div class="form-group">
+                                <textarea id="question-input" rows="3" placeholder="Inscribe your question here if microphone is resting..."></textarea>
+                            </div>
+                            <button type="submit" id="submit-btn" class="btn-royal-primary">
+                                <span class="btn-text">Consult the Oracle</span>
+                            </button>
+                        </form>
+                        <div class="quick-prompts">
+                            <span class="quick-prompts-label">Sacred Inquiries:</span>
+                            <div class="prompt-chips">
+                                <button class="chip chip-heritage" data-query="What is photosynthesis?">Photosynthesis</button>
+                                <button class="chip chip-heritage" data-query="What is Python programming language?">Python Lang</button>
+                                <button class="chip chip-heritage" data-query="What is MS MARCO dataset?">MS MARCO</button>
+                                <button class="chip chip-heritage" data-query="What is artificial intelligence?">AI Overview</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sanctuary Chamber Settings -->
+                    <div class="card manuscript-card">
+                        <div class="card-title-group">
+                            <span class="card-icon">⚙️</span>
+                            <h3 class="card-title">Chamber Configuration</h3>
+                        </div>
+                        <div class="form-group">
+                            <div class="slider-header">
+                                <label for="top-k-slider">Context Manuscripts (Top-K):</label>
+                                <span id="top-k-val" class="badge-gold-counter">5</span>
+                            </div>
+                            <input type="range" id="top-k-slider" min="1" max="15" value="5">
+                        </div>
+                        <ul class="heritage-meta-list">
+                            <li><span>Knowledge Corpus:</span> <strong>ai4bharat/MSMARCO-XI</strong></li>
+                            <li><span>Vector Index:</span> <strong>FAISS (2,000 Embeddings)</strong></li>
+                            <li><span>STT Oracle:</span> <strong id="meta-stt">Google Speech API</strong></li>
+                            <li><span>LLM Synthesis:</span> <strong id="meta-llm">Groq / Gemini Pro</strong></li>
+                            <li><span>TTS Voice:</span> <strong id="meta-tts">gTTS Audio API</strong></li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- SCROLL FOOTER -->
+                <footer class="scroll-footer">
+                    <div class="footer-palms">🌴 · 🪷 · 🌴</div>
+                    <p class="footer-copy">© 2026 MSMARCO-XI Spoken RAG Oracle · Inspired by Hacker House Goa</p>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         ROYAL GOLDEN LOADER OVERLAY
+    ============================================================= -->
+    <div id="loader-overlay" class="loader-overlay hidden">
+        <div class="loader-gold-mandala">
+            <svg viewBox="0 0 100 100">
+                <circle class="mandala-outer" r="42" cy="50" cx="50"></circle>
+                <circle class="mandala-inner" r="26" cy="50" cx="50"></circle>
+                <polygon points="50,18 58,42 82,50 58,58 50,82 42,58 18,50 42,42" fill="none" stroke="var(--gold-primary)" stroke-width="1.5" />
+            </svg>
+        </div>
+        <p class="loader-text" id="loader-text">Consulting the Knowledge Scroll...</p>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Invisible audio element for TTS playback -->
+    <audio id="agent-audio" class="hidden"></audio>
+
+    <!-- CDN Libraries: GSAP + ScrollTrigger + Lenis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.21/dist/lenis.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
