@@ -46,28 +46,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
-                // Spindles pull apart vertically as the scroll unrolls:
-                // Top spindle moves upward along top edge
                 unrollTl.to(topSpindle, {
                     y: -60,
                     scale: 0.98,
                     ease: "power1.inOut"
                 }, 0);
 
-                // Bottom spindle rolls downward along bottom edge
                 unrollTl.to(bottomSpindle, {
                     y: 70,
                     scale: 1.02,
                     ease: "power1.inOut"
                 }, 0);
 
-                // Parchment viewport height expands from initial window to full sanctuary opening
                 unrollTl.to(parchmentGate, {
                     height: "82vh",
                     ease: "power1.inOut"
                 }, 0);
 
-                // 4-Layer Parallax scrubbing inside the opening parchment
                 const layers = [
                     { layer: "1", yPercent: 45 },
                     { layer: "2", yPercent: 30 },
@@ -81,7 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
-                // Fade out prompt on scroll
                 if (heroPrompt) {
                     unrollTl.to(heroPrompt, { opacity: 0, y: 25, ease: "power1.out" }, 0.05);
                 }
@@ -101,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (lenisInstance) {
             lenisInstance.scrollTo(target, {
                 offset: -20,
-                duration: 1.6, // Moderate cinematic unrolling speed
+                duration: 1.6,
                 easing: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
             });
         } else {
@@ -127,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 2. TOAST NOTIFICATION SYSTEM (HERITAGE THEME)
+    // 2. TOAST NOTIFICATION SYSTEM
     // ============================================================
     const Toast = {
         _container: document.getElementById("toast-container"),
@@ -171,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 3. ROYAL LOADER
+    // 3. CLEAN LOADER
     // ============================================================
     const Loader = {
         _overlay: document.getElementById("loader-overlay"),
@@ -188,8 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 4. GOLDEN SOLAR WEBGL VOICE DICTATOR SPHERE
-    //    Small resting core -> massive dynamic expansion with voice!
+    // 4. ARTISTIC AI SOUND INSTALLATION (OCEAN RIPPLES & SAND WAVES)
     // ============================================================
     const VoiceDictator = (() => {
         const canvas = document.getElementById("voice-canvas");
@@ -226,29 +219,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 vec2 uv   = norm * 2.0 - 1.0;
                 uv.x     *= uResolution.x / uResolution.y;
 
-                float t   = uTime * 0.5;
-                float amp = clamp(uAmplitude, 0.0, 1.8);
+                float t   = uTime * 0.45;
+                float amp = clamp(uAmplitude, 0.0, 1.6);
 
-                // Compact base radius (0.07), expanding up to 0.65+ on loud speech!
-                float radius    = 0.07 + amp * 0.44 + sin(t * 1.3) * 0.008;
-                float thickness = 0.028 + amp * 0.16 + sin(t * 0.9) * 0.006;
+                // Ocean sound wave ripples
+                float radius    = 0.08 + amp * 0.42 + sin(t * 1.2) * 0.007;
+                float thickness = 0.030 + amp * 0.15 + sin(t * 0.8) * 0.005;
 
                 float dist  = length(uv);
                 float ring  = smoothstep(radius + thickness, radius, dist)
                             - smoothstep(radius, radius - thickness, dist);
-                float glow  = exp(-14.0 * abs(dist - radius) / (1.0 + amp * 0.9));
-                float halo  = exp(-5.0 * dist * (1.0 - amp * 0.35));
+                float glow  = exp(-12.0 * abs(dist - radius) / (1.0 + amp * 0.8));
+                float halo  = exp(-4.5 * dist * (1.0 - amp * 0.3));
 
-                float intensity = clamp(ring * 0.92 + glow * 0.68 + halo * 0.16, 0.0, 1.0);
+                float intensity = clamp(ring * 0.90 + glow * 0.65 + halo * 0.18, 0.0, 1.0);
                 float threshold = bayerDither(gl_FragCoord.xy);
                 float shade     = step(threshold, intensity);
 
-                // Rich Solar Gold & Amber Palette
-                vec3 goldLight = vec3(0.99, 0.88, 0.35); // Solar Gold
-                vec3 amberDeep = vec3(0.85, 0.52, 0.08); // Warm Amber
-                vec3 color     = mix(amberDeep, goldLight, clamp(intensity * 1.2, 0.0, 1.0));
+                // Soft Tropical & Ocean Wave Palette
+                vec3 oceanMuted = vec3(0.47, 0.66, 0.63); // #78A9A0 Muted Ocean Teal
+                vec3 warmCream  = vec3(0.96, 0.92, 0.87); // #F5EBDD Warm Cream
+                vec3 softCoral  = vec3(0.85, 0.51, 0.42); // #D9826B Soft Terracotta
 
-                gl_FragColor = vec4(color * shade, shade * 0.98);
+                vec3 color = mix(oceanMuted, warmCream, clamp(intensity * 1.2, 0.0, 1.0));
+                color = mix(color, softCoral, clamp(amp * 0.35, 0.0, 0.5));
+
+                gl_FragColor = vec4(color * shade, shade * 0.96);
             }
         `;
 
@@ -283,36 +279,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
             resize();
             gl.useProgram(prog);
-            gl.clearColor(0.008, 0.03, 0.02, 1.0);
+            gl.clearColor(0.078, 0.20, 0.15, 1.0); // Tropical deep green background
             gl.clear(gl.COLOR_BUFFER_BIT);
 
-            // Subtle gentle breath when resting idle
             if (currentState === "idle") {
-                const idleBreath = 0.025 + 0.02 * (0.5 + 0.5 * Math.sin(time * 0.0018));
+                const idleBreath = 0.025 + 0.02 * (0.5 + 0.5 * Math.sin(time * 0.0016));
                 targetAmplitude = idleBreath;
             } else if (currentState === "processing") {
-                const pulseProcessing = 0.2 + 0.15 * (0.5 + 0.5 * Math.sin(time * 0.006));
+                const pulseProcessing = 0.18 + 0.12 * (0.5 + 0.5 * Math.sin(time * 0.005));
                 targetAmplitude = pulseProcessing;
             }
 
-            // Snappy attack, smooth decay
-            const easeFactor = (targetAmplitude > amplitude) ? 0.28 : 0.085;
+            const easeFactor = (targetAmplitude > amplitude) ? 0.26 : 0.085;
             amplitude += (targetAmplitude - amplitude) * easeFactor;
 
             if (uniforms.time)       gl.uniform1f(uniforms.time, time * 0.001);
             if (uniforms.amplitude)  gl.uniform1f(uniforms.amplitude, amplitude);
             if (uniforms.resolution) gl.uniform2f(uniforms.resolution, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-            // Dynamically scale the outer orb wrapper based on vocal amplitude
             if (sphereWrapper) {
-                const scale       = 1.0 + amplitude * 0.12;
-                const glowSize    = 30 + amplitude * 160;
-                const glowOpacity = 0.15 + amplitude * 0.65;
+                const scale       = 1.0 + amplitude * 0.10;
+                const glowSize    = 25 + amplitude * 120;
+                const glowOpacity = 0.15 + amplitude * 0.45;
                 sphereWrapper.style.transform = `scale(${scale.toFixed(4)})`;
                 sphereWrapper.style.boxShadow = `
-                    0 0 0 1.5px rgba(251,191,36,${(0.3 + amplitude * 0.5).toFixed(3)}),
-                    0 0 ${glowSize.toFixed(1)}px rgba(251,191,36,${glowOpacity.toFixed(3)}),
-                    0 0 ${(glowSize * 1.6).toFixed(1)}px rgba(16,185,129,${(glowOpacity * 0.45).toFixed(3)})
+                    0 0 0 1.5px rgba(245, 235, 221, ${(0.22 + amplitude * 0.35).toFixed(3)}),
+                    0 8px 24px rgba(0, 0, 0, 0.35),
+                    0 0 ${glowSize.toFixed(1)}px rgba(120, 169, 160, ${glowOpacity.toFixed(3)})
                 `;
             }
 
@@ -372,14 +365,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (state === "idle") {
                 targetAmplitude = 0.03;
             } else if (state === "processing") {
-                targetAmplitude = 0.3;
+                targetAmplitude = 0.25;
             }
         }
 
-        // Live loudness callback with wide dynamic range
         function setLiveLoudness(loudness) {
             if (currentState === "listening" || currentState === "speaking") {
-                targetAmplitude = Math.min(1.6, Math.max(0.03, loudness));
+                targetAmplitude = Math.min(1.5, Math.max(0.03, loudness));
             }
         }
 
@@ -396,7 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     // 5. TYPEWRITER EFFECT
     // ============================================================
-    function typewriter(element, text, speed = 22, onComplete) {
+    function typewriter(element, text, speed = 18, onComplete) {
         element.innerHTML = "";
         let index = 0;
 
@@ -414,8 +406,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => {
                     cursor.style.animation   = "none";
                     cursor.style.opacity     = "0";
-                    cursor.style.transition  = "opacity .5s";
-                }, 800);
+                    cursor.style.transition  = "opacity .4s";
+                }, 700);
                 if (typeof onComplete === "function") onComplete();
             }
         }
@@ -426,7 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     // 6. NUMBER TICKER
     // ============================================================
-    function tickNumber(element, target, duration = 850) {
+    function tickNumber(element, target, duration = 750) {
         const start   = performance.now();
         const decimals = target < 1 ? 3 : target < 10 ? 2 : 1;
 
@@ -453,8 +445,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const micBtn            = document.getElementById("mic-btn");
     const voiceStatusLabel  = document.getElementById("voice-status-label");
+    const oracleSubhint     = document.getElementById("oracle-subhint");
     const transcriptionCard = document.getElementById("transcription-card");
     const transcriptionText = document.getElementById("transcription-text");
+    const liveSpeechStatus  = document.getElementById("live-speech-status");
+    const livePulseDot      = document.getElementById("live-pulse-dot");
     const clearMemoryBtn    = document.getElementById("clear-memory-btn");
 
     const placeholderState  = document.getElementById("placeholder-state");
@@ -484,6 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let recordingBuffer    = [];
     let sampleRate         = 0;
     let currentAudioBase64 = null;
+    let liveRecognition    = null;
 
 
     // ============================================================
@@ -514,19 +510,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await resp.json();
             if (data.status === "healthy") {
                 statusPillText.textContent = `System Active (${data.total_indexed_documents} indexed)`;
-                if (statusGem) statusGem.style.backgroundColor = "var(--emerald-gem)";
+                if (statusGem) statusGem.style.backgroundColor = "var(--ocean-muted)";
             } else {
                 statusPillText.textContent = "Degraded — check index";
-                if (statusGem) statusGem.style.backgroundColor = "var(--gold-amber)";
-                Toast.warning("System Degraded", "Vector index may not be loaded. Run build_index.py.");
+                if (statusGem) statusGem.style.backgroundColor = "var(--accent-ochre)";
+                Toast.warning("System Notice", "Vector index status is degraded.");
             }
             if (data.stt_provider) metaSTT.textContent = data.stt_provider.toUpperCase();
             if (data.llm_provider) metaLLM.textContent = data.llm_provider.toUpperCase();
             if (data.tts_provider) metaTTS.textContent = data.tts_provider.toUpperCase();
         } catch (err) {
             statusPillText.textContent = "Oracle Offline";
-            if (statusGem) statusGem.style.backgroundColor = "var(--coral-accent)";
-            Toast.error("Oracle Offline", "Cannot reach the API server.");
+            if (statusGem) statusGem.style.backgroundColor = "var(--coral-soft)";
+            Toast.error("Connection Notice", "Cannot reach the API server.");
         }
     }
     checkHealth();
@@ -557,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const text = answerContent.innerText || answerContent.textContent;
         navigator.clipboard.writeText(text).then(() => {
             copyBtnText.textContent = "✓ Inscribed!";
-            copyAnsBtn.style.color  = "var(--gold-bright)";
+            copyAnsBtn.style.color  = "var(--sand-warm)";
             setTimeout(() => {
                 copyBtnText.textContent = "Copy Inscription";
                 copyAnsBtn.style.color  = "";
@@ -588,7 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const topK = parseInt(topKSlider.value, 10);
         submitBtn.disabled = true;
         submitBtn.querySelector(".btn-text").textContent = "Consulting Scroll…";
-        Loader.show("Searching the MSMARCO-XI Archive…");
+        Loader.show("Searching the Knowledge Archive…");
 
         try {
             const response = await fetch("/api/ask", {
@@ -607,10 +603,15 @@ document.addEventListener("DOMContentLoaded", () => {
             replayAudioBtn.classList.add("hidden");
             data.transcript = question;
             data.retrieved_documents = data.retrieved_documents || [];
+            
+            // Update transcript display
+            transcriptionText.textContent = question;
+            if (liveSpeechStatus) liveSpeechStatus.textContent = "Text Inscription";
+            
             renderResults(data);
 
         } catch (err) {
-            Toast.error("Oracle Error", err.message);
+            Toast.error("Oracle Notice", err.message);
         } finally {
             Loader.hide();
             submitBtn.disabled = false;
@@ -620,7 +621,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 15. LIVE VOICE RECORDING WITH HIGH DYNAMIC RANGE LOUDNESS
+    // 15. LIVE VOICE RECORDING & REAL-TIME SPEECH STREAMING
     // ============================================================
     micBtn.addEventListener("click", () => {
         if (isRecording) stopRecordingAndSend();
@@ -632,8 +633,38 @@ document.addEventListener("DOMContentLoaded", () => {
         isRecording     = true;
         currentAudioBase64 = null;
 
-        updateMicState("listening", "Chanting… Tap sphere to seal");
-        transcriptionCard.classList.add("hidden");
+        updateMicState("listening", "Listening… Tap to seal query");
+        if (oracleSubhint) oracleSubhint.textContent = "Speak clearly into your microphone...";
+        if (liveSpeechStatus) liveSpeechStatus.textContent = "Listening...";
+        if (livePulseDot) livePulseDot.classList.add("active");
+        if (transcriptionText) transcriptionText.textContent = "Listening to your voice...";
+
+        // Start Live Speech Recognition in browser if supported
+        try {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRec) {
+                liveRecognition = new SpeechRec();
+                liveRecognition.continuous = true;
+                liveRecognition.interimResults = true;
+                liveRecognition.lang = "en-US";
+                
+                liveRecognition.onresult = (event) => {
+                    let fullText = "";
+                    for (let i = 0; i < event.results.length; ++i) {
+                        fullText += event.results[i][0].transcript + " ";
+                    }
+                    if (fullText.trim()) {
+                        transcriptionText.textContent = fullText.trim();
+                    }
+                };
+                liveRecognition.onerror = (e) => {
+                    console.log("Live speech stream notice:", e.error);
+                };
+                liveRecognition.start();
+            }
+        } catch (e) {
+            console.log("Browser SpeechRecognition fallback:", e);
+        }
 
         try {
             audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -644,7 +675,6 @@ document.addEventListener("DOMContentLoaded", () => {
             audioInput      = audioContext.createMediaStreamSource(audioStream);
             scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
 
-            // Real-time Root-Mean-Square (RMS) vocal energy calculation
             scriptProcessor.onaudioprocess = (e) => {
                 if (!isRecording) return;
                 const channelData = e.inputBuffer.getChannelData(0);
@@ -655,9 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     sumSquares += channelData[i] * channelData[i];
                 }
                 const rms = Math.sqrt(sumSquares / channelData.length);
-
-                // Expands from 0.03 to 1.6 on vocal loudness
-                const voiceLoudness = Math.min(1.6, Math.max(0.03, (rms - 0.002) * 9.0));
+                const voiceLoudness = Math.min(1.5, Math.max(0.03, (rms - 0.002) * 8.5));
                 VoiceDictator.setLiveLoudness(voiceLoudness);
             };
 
@@ -667,7 +695,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
             isRecording = false;
             updateMicState("idle", "Tap sphere to speak");
-            Toast.error("Oracle Mic Error", `Microphone access denied: ${err.message}`);
+            if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
+            if (livePulseDot) livePulseDot.classList.remove("active");
+            Toast.error("Microphone Notice", `Microphone access denied: ${err.message}`);
         }
     }
 
@@ -676,7 +706,15 @@ document.addEventListener("DOMContentLoaded", () => {
         isRecording = false;
 
         updateMicState("processing", "Deciphering spoken words…");
-        Loader.show("Transcribing sacred speech…");
+        if (oracleSubhint) oracleSubhint.textContent = "Synthesizing neural retrieval response...";
+        if (liveSpeechStatus) liveSpeechStatus.textContent = "Deciphering...";
+        if (livePulseDot) livePulseDot.classList.remove("active");
+        Loader.show("Transcribing and retrieving from MSMARCO-XI...");
+
+        if (liveRecognition) {
+            try { liveRecognition.stop(); } catch(e) {}
+            liveRecognition = null;
+        }
 
         if (scriptProcessor)  { scriptProcessor.disconnect(); scriptProcessor.onaudioprocess = null; }
         if (audioInput)       { audioInput.disconnect(); }
@@ -687,7 +725,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (pcmWavBlob.size < 1000) {
             Loader.hide();
             updateMicState("idle", "Tap sphere to speak");
-            Toast.warning("Short Chant", "Speech was too brief. Please speak clearly.");
+            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+            if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
+            Toast.warning("Short Speech", "Speech was too brief. Please speak clearly.");
             return;
         }
 
@@ -696,7 +736,6 @@ document.addEventListener("DOMContentLoaded", () => {
         formData.append("file", pcmWavBlob, "query.wav");
 
         try {
-            Loader.show("Retrieving from MSMARCO-XI Knowledge Base…");
             const response = await fetch(`/api/ask-voice?top_k=${topK}`, {
                 method: "POST",
                 body: formData
@@ -710,8 +749,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
             renderResults(data);
 
-            transcriptionText.textContent = data.transcript;
-            transcriptionCard.classList.remove("hidden");
+            if (transcriptionText && data.transcript) {
+                transcriptionText.textContent = data.transcript;
+            }
+            if (liveSpeechStatus) liveSpeechStatus.textContent = "Inscribed";
 
             if (data.audio) {
                 currentAudioBase64 = data.audio;
@@ -719,11 +760,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 playAudio(data.audio);
             } else {
                 updateMicState("idle", "Tap sphere to speak");
+                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
             }
 
         } catch (err) {
             updateMicState("idle", "Tap sphere to speak");
-            Toast.error("Oracle Error", err.message);
+            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+            if (liveSpeechStatus) liveSpeechStatus.textContent = "Error";
+            Toast.error("Oracle Notice", err.message);
         } finally {
             Loader.hide();
         }
@@ -737,6 +781,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function playAudio(audioBase64) {
         updateMicState("speaking", "Chanting Answer…");
+        if (oracleSubhint) oracleSubhint.textContent = "Oracle voice synthesis in progress...";
         agentAudio.src = audioBase64;
         agentAudio.play();
 
@@ -777,18 +822,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     clearInterval(fallbackIv);
                     return;
                 }
-                VoiceDictator.setLiveLoudness(0.2 + Math.random() * 0.7);
+                VoiceDictator.setLiveLoudness(0.2 + Math.random() * 0.6);
             }, 100);
         }
 
         agentAudio.onended = () => {
             cancelAnimationFrame(ttsAnimId);
             updateMicState("idle", "Tap sphere to speak");
+            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
         };
         agentAudio.onerror = () => {
             cancelAnimationFrame(ttsAnimId);
             updateMicState("idle", "Tap sphere to speak");
-            Toast.error("Audio Error", "Failed to chant audio response.");
+            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+            Toast.error("Audio Notice", "Could not play audio response.");
         };
     }
 
@@ -802,7 +849,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sourcesCard.classList.remove("hidden");
 
         answerContent.innerHTML = "";
-        typewriter(answerContent, data.answer || "No revelation inscribed.", 20);
+        typewriter(answerContent, data.answer || "No revelation inscribed.", 18);
 
         const meta = data.metadata || {};
         performanceBar.innerHTML = "";
@@ -818,34 +865,29 @@ document.addEventListener("DOMContentLoaded", () => {
         metricDefs.forEach(({ key, label, unit }) => {
             if (meta[key] === undefined) return;
             const item    = document.createElement("div");
-            item.className = "metric-item";
+            item.className = "perf-item";
 
             const labelEl = document.createElement("span");
-            labelEl.className   = "metric-label";
+            labelEl.className   = "perf-label";
             labelEl.textContent = label;
 
             const valEl = document.createElement("span");
-            valEl.className   = "metric-value";
+            valEl.className   = "perf-val";
             valEl.textContent = "0.000";
-
-            const unitEl = document.createElement("span");
-            unitEl.className   = "metric-unit";
-            unitEl.textContent = unit;
 
             item.appendChild(labelEl);
             item.appendChild(valEl);
-            item.appendChild(unitEl);
             performanceBar.appendChild(item);
 
-            tickNumber(valEl, parseFloat(meta[key]) || 0, 850);
+            tickNumber(valEl, parseFloat(meta[key]) || 0, 750);
         });
 
         if (meta.cached) {
             const item    = document.createElement("div");
-            item.className = "metric-item";
+            item.className = "perf-item";
             item.innerHTML = `
-                <span class="metric-label">Cache</span>
-                <span class="metric-value" style="color:var(--emerald-gem)">⚡ HIT</span>
+                <span class="perf-label">Cache</span>
+                <span class="perf-val" style="color:var(--ocean-muted)">⚡ HIT</span>
             `;
             performanceBar.appendChild(item);
         }
@@ -855,20 +897,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (data.sources && data.sources.length > 0) {
             data.sources.forEach((source, idx) => {
-                const card = document.createElement("div");
-                card.className = "source-card";
-                card.style.animationDelay = `${idx * 80}ms`;
-                card.innerHTML = `
-                    <div class="source-card-header">
-                        <span class="source-id">Manuscript Passage #${idx + 1} — ID: ${source.id}</span>
-                        <span class="score-badge">Similarity: ${source.score}</span>
+                const item = document.createElement("div");
+                item.className = "source-item";
+                item.innerHTML = `
+                    <div class="source-header">
+                        <span class="source-title">${idx + 1}. ${escapeHtml(source.title || 'Document')} (ID: ${source.id})</span>
+                        <span class="source-score">Similarity: ${source.score}</span>
                     </div>
                     <div class="source-text">${escapeHtml(source.text)}</div>
                 `;
-                sourcesList.appendChild(card);
+                sourcesList.appendChild(item);
             });
         } else {
-            sourcesList.innerHTML = `<p style="color:var(--text-muted-green);font-size:.875rem;">No evidence passages retrieved.</p>`;
+            sourcesList.innerHTML = `<p style="color:var(--text-muted);font-size:.875rem;">No evidence passages retrieved.</p>`;
         }
     }
 
