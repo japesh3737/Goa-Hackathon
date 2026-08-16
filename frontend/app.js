@@ -279,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             resize();
             gl.useProgram(prog);
-            gl.clearColor(0.078, 0.20, 0.15, 1.0); // Tropical deep green background
+            gl.clearColor(0.078, 0.20, 0.15, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             if (currentState === "idle") {
@@ -434,7 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 7. DOM ELEMENT REFERENCES
+    // 7. DOM ELEMENT REFERENCES & STATE MANAGEMENT
     // ============================================================
     const questionInput     = document.getElementById("question-input");
     const topKSlider        = document.getElementById("top-k-slider");
@@ -450,6 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const transcriptionText = document.getElementById("transcription-text");
     const liveSpeechStatus  = document.getElementById("live-speech-status");
     const livePulseDot      = document.getElementById("live-pulse-dot");
+    const speechHint        = document.getElementById("speech-hint");
     const clearMemoryBtn    = document.getElementById("clear-memory-btn");
 
     const placeholderState  = document.getElementById("placeholder-state");
@@ -471,15 +472,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const metaLLM           = document.getElementById("meta-llm");
     const metaTTS           = document.getElementById("meta-tts");
 
-    let audioContext       = null;
-    let audioStream        = null;
-    let scriptProcessor    = null;
-    let audioInput         = null;
-    let isRecording        = false;
-    let recordingBuffer    = [];
-    let sampleRate         = 0;
-    let currentAudioBase64 = null;
-    let liveRecognition    = null;
+    // Unified Voice State Machine & Session Control
+    let currentVoiceState      = "idle"; // "idle" | "listening" | "processing" | "speaking"
+    let currentSessionId       = 0;      // Incremented on interruptions to cancel stale callbacks
+    let activeAbortController  = null;   // Aborts in-flight network requests
+    let audioContext           = null;
+    let audioStream            = null;
+    let scriptProcessor        = null;
+    let audioInput             = null;
+    let recordingBuffer        = [];
+    let sampleRate             = 0;
+    let currentAudioBase64     = null;
+    let liveRecognition        = null;
+    let silenceTimeout         = null;
+    let liveFinalTranscript    = "";
+    let liveInterimTranscript  = "";
+
+    // TTS Web Audio Reactivity nodes
+    let ttsAudioCtx  = null;
+    let ttsAnalyser  = null;
+    let ttsSource    = null;
+    let ttsAnimId    = null;
 
 
     // ============================================================
@@ -495,6 +508,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     promptChips.forEach((chip) => {
         chip.addEventListener("click", () => {
+            stopAISpeech();
             questionInput.value = chip.dataset.query;
             ragForm.dispatchEvent(new Event("submit"));
         });
@@ -533,6 +547,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     clearMemoryBtn.addEventListener("click", async () => {
         try {
+            stopAISpeech();
             const resp = await fetch("/api/memory/clear", { method: "POST" });
             const data = await resp.json();
             Toast.success("Memory Purified", data.message || "Conversational history reset.");
@@ -546,7 +561,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // 12. REPLAY AUDIO + COPY ANSWER
     // ============================================================
     replayAudioBtn.addEventListener("click", () => {
-        if (currentAudioBase64) playAudio(currentAudioBase64);
+        if (currentAudioBase64) {
+            stopAISpeech();
+            currentSessionId++;
+            playAudio(currentAudioBase64, currentSessionId);
+        }
     });
 
     copyAnsBtn.addEventListener("click", () => {
@@ -565,33 +584,103 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 13. MIC STATE MANAGEMENT
+    // 13. CENTRAL VOICE STATE UPDATE HELPER
     // ============================================================
     function updateMicState(state, message) {
-        voiceStatusLabel.textContent = message;
+        currentVoiceState = state;
+        if (voiceStatusLabel) voiceStatusLabel.textContent = message;
         VoiceDictator.setState(state);
     }
 
 
     // ============================================================
-    // 14. TEXT FORM SUBMISSION
+    // 14. COMPLETE & IMMEDIATE SPEECH / AUDIO INTERRUPTION
+    // ============================================================
+    function stopAISpeech() {
+        // 1. Invalidate current session ID immediately so no stale callbacks run
+        currentSessionId++;
+
+        // 2. Cancel Browser SpeechSynthesis if active
+        if (window.speechSynthesis) {
+            try {
+                window.speechSynthesis.cancel();
+            } catch (e) {
+                console.warn("SpeechSynthesis cancel notice:", e);
+            }
+        }
+
+        // 3. Pause & unload HTML5 Audio element immediately
+        if (agentAudio) {
+            try {
+                agentAudio.pause();
+                agentAudio.removeAttribute("src");
+                agentAudio.load();
+            } catch (e) {
+                console.warn("agentAudio stop notice:", e);
+            }
+        }
+
+        // 4. Cancel active animation & suspend Web Audio Context
+        if (ttsAnimId) {
+            cancelAnimationFrame(ttsAnimId);
+            ttsAnimId = null;
+        }
+        if (ttsAudioCtx && ttsAudioCtx.state === "running") {
+            try { ttsAudioCtx.suspend(); } catch (e) {}
+        }
+
+        // 5. Abort in-flight network request
+        if (activeAbortController) {
+            try { activeAbortController.abort(); } catch (e) {}
+            activeAbortController = null;
+        }
+
+        // 6. Clear silence timer
+        if (silenceTimeout) {
+            clearTimeout(silenceTimeout);
+            silenceTimeout = null;
+        }
+
+        // 7. Reset Visual & Status indicators
+        updateMicState("idle", "Tap sphere to speak");
+        if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
+        if (livePulseDot) livePulseDot.classList.remove("active");
+        if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+        if (speechHint) speechHint.textContent = "Click the sphere again to complete your question";
+        Loader.hide();
+    }
+
+
+    // ============================================================
+    // 15. TEXT FORM SUBMISSION (WITH CANCELLATION SUPPORT)
     // ============================================================
     ragForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const question = questionInput.value.trim();
         if (!question) return;
 
+        // Stop any current speech before text query
+        stopAISpeech();
+        const thisSessionId = currentSessionId;
+
         const topK = parseInt(topKSlider.value, 10);
         submitBtn.disabled = true;
         submitBtn.querySelector(".btn-text").textContent = "Consulting Scroll…";
         Loader.show("Searching the Knowledge Archive…");
+        updateMicState("processing", "Thinking…");
+        if (liveSpeechStatus) liveSpeechStatus.textContent = "Thinking...";
+
+        activeAbortController = new AbortController();
 
         try {
             const response = await fetch("/api/ask", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ question, top_k: topK })
+                body: JSON.stringify({ question, top_k: topK }),
+                signal: activeAbortController.signal
             });
+
+            if (thisSessionId !== currentSessionId) return; // Stale session ignored
 
             if (!response.ok) {
                 const errData = await response.json();
@@ -599,19 +688,25 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
+            if (thisSessionId !== currentSessionId) return;
+
             currentAudioBase64 = null;
             replayAudioBtn.classList.add("hidden");
             data.transcript = question;
             data.retrieved_documents = data.retrieved_documents || [];
             
-            // Update transcript display
             transcriptionText.textContent = question;
-            if (liveSpeechStatus) liveSpeechStatus.textContent = "Text Inscription";
+            if (liveSpeechStatus) liveSpeechStatus.textContent = "Inscribed";
+            updateMicState("idle", "Tap sphere to speak");
             
             renderResults(data);
 
         } catch (err) {
-            Toast.error("Oracle Notice", err.message);
+            if (thisSessionId === currentSessionId && err.name !== "AbortError") {
+                updateMicState("idle", "Tap sphere to speak");
+                if (liveSpeechStatus) liveSpeechStatus.textContent = "Error";
+                Toast.error("Oracle Notice", err.message);
+            }
         } finally {
             Loader.hide();
             submitBtn.disabled = false;
@@ -621,25 +716,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 15. LIVE VOICE RECORDING & REAL-TIME SPEECH STREAMING
+    // 16. MICROPHONE BUTTON INTELLIGENT TOGGLE HANDLER
     // ============================================================
     micBtn.addEventListener("click", () => {
-        if (isRecording) stopRecordingAndSend();
-        else startRecording();
+        if (currentVoiceState === "speaking") {
+            // STATE 3: AI IS SPEAKING -> INTERRUPT IMMEDIATELY & START LISTENING FOR NEXT QUESTION
+            stopAISpeech();
+            startRecording();
+        } else if (currentVoiceState === "listening") {
+            // STATE 2: CURRENTLY LISTENING -> STOP & SEND
+            stopRecordingAndSend();
+        } else if (currentVoiceState === "processing") {
+            // Processing -> Interrupt and start fresh
+            stopAISpeech();
+            startRecording();
+        } else {
+            // STATE 1: IDLE -> START LISTENING
+            startRecording();
+        }
     });
 
-    async function startRecording() {
-        recordingBuffer = [];
-        isRecording     = true;
-        currentAudioBase64 = null;
 
-        updateMicState("listening", "Listening… Tap to seal query");
+    // ============================================================
+    // 17. START LISTENING (WITH TRUE BARGE-IN & ROBUST SPEECH STREAMING)
+    // ============================================================
+    async function startRecording() {
+        // Stop any old speech first
+        stopAISpeech();
+        const thisSessionId = currentSessionId;
+
+        recordingBuffer = [];
+        liveFinalTranscript = "";
+        liveInterimTranscript = "";
+
+        updateMicState("listening", "Listening… Tap to seal");
         if (oracleSubhint) oracleSubhint.textContent = "Speak clearly into your microphone...";
         if (liveSpeechStatus) liveSpeechStatus.textContent = "Listening...";
         if (livePulseDot) livePulseDot.classList.add("active");
         if (transcriptionText) transcriptionText.textContent = "Listening to your voice...";
+        if (speechHint) speechHint.textContent = "Tap sphere to send, or pause when finished";
 
-        // Start Live Speech Recognition in browser if supported
+        // 17.1 Web Speech API Live Recognition
         try {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRec) {
@@ -647,27 +764,75 @@ document.addEventListener("DOMContentLoaded", () => {
                 liveRecognition.continuous = true;
                 liveRecognition.interimResults = true;
                 liveRecognition.lang = "en-US";
-                
+                liveRecognition.maxAlternatives = 1;
+
                 liveRecognition.onresult = (event) => {
-                    let fullText = "";
+                    if (thisSessionId !== currentSessionId) return;
+
+                    let interim = "";
+                    let finalStr = "";
+
                     for (let i = 0; i < event.results.length; ++i) {
-                        fullText += event.results[i][0].transcript + " ";
+                        const res = event.results[i];
+                        if (res.isFinal) {
+                            finalStr += res[0].transcript + " ";
+                        } else {
+                            interim += res[0].transcript + " ";
+                        }
                     }
-                    if (fullText.trim()) {
-                        transcriptionText.textContent = fullText.trim();
+
+                    if (finalStr.trim()) {
+                        liveFinalTranscript = finalStr.trim();
+                    }
+                    liveInterimTranscript = interim.trim();
+
+                    const combined = (liveFinalTranscript + " " + liveInterimTranscript).trim();
+                    if (combined) {
+                        transcriptionText.textContent = combined;
+
+                        // Natural silence auto-send debounce (2.6s silence after user spoke)
+                        if (silenceTimeout) clearTimeout(silenceTimeout);
+                        silenceTimeout = setTimeout(() => {
+                            if (currentVoiceState === "listening" && thisSessionId === currentSessionId) {
+                                stopRecordingAndSend();
+                            }
+                        }, 2600);
                     }
                 };
+
                 liveRecognition.onerror = (e) => {
-                    console.log("Live speech stream notice:", e.error);
+                    console.log("Web Speech API notice:", e.error);
                 };
+
+                liveRecognition.onend = () => {
+                    // Safe cleanup if recognition stops naturally
+                    if (currentVoiceState === "listening" && thisSessionId === currentSessionId && !recordingBuffer.length) {
+                        // Keep alive if still recording
+                    }
+                };
+
                 liveRecognition.start();
             }
         } catch (e) {
-            console.log("Browser SpeechRecognition fallback:", e);
+            console.log("Web Speech API initialization fallback:", e);
         }
 
+        // 17.2 MediaStream AudioContext Recording & Live Energy Analysis
         try {
-            audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                },
+                video: false
+            });
+
+            if (thisSessionId !== currentSessionId) {
+                audioStream.getTracks().forEach(t => t.stop());
+                return;
+            }
+
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             audioContext = new AudioCtx();
             sampleRate   = audioContext.sampleRate;
@@ -676,7 +841,7 @@ document.addEventListener("DOMContentLoaded", () => {
             scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
 
             scriptProcessor.onaudioprocess = (e) => {
-                if (!isRecording) return;
+                if (currentVoiceState !== "listening" || thisSessionId !== currentSessionId) return;
                 const channelData = e.inputBuffer.getChannelData(0);
                 recordingBuffer.push(new Float32Array(channelData));
 
@@ -693,53 +858,73 @@ document.addEventListener("DOMContentLoaded", () => {
             scriptProcessor.connect(audioContext.destination);
 
         } catch (err) {
-            isRecording = false;
-            updateMicState("idle", "Tap sphere to speak");
-            if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
-            if (livePulseDot) livePulseDot.classList.remove("active");
-            Toast.error("Microphone Notice", `Microphone access denied: ${err.message}`);
+            if (thisSessionId === currentSessionId) {
+                updateMicState("idle", "Tap sphere to speak");
+                if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
+                if (livePulseDot) livePulseDot.classList.remove("active");
+                Toast.error("Microphone Notice", `Microphone access denied: ${err.message}`);
+            }
         }
     }
 
-    async function stopRecordingAndSend() {
-        if (!isRecording) return;
-        isRecording = false;
 
-        updateMicState("processing", "Deciphering spoken words…");
+    // ============================================================
+    // 18. STOP LISTENING AND SEND QUERY
+    // ============================================================
+    async function stopRecordingAndSend() {
+        if (currentVoiceState !== "listening") return;
+        const thisSessionId = currentSessionId;
+
+        if (silenceTimeout) {
+            clearTimeout(silenceTimeout);
+            silenceTimeout = null;
+        }
+
+        updateMicState("processing", "Thinking…");
         if (oracleSubhint) oracleSubhint.textContent = "Synthesizing neural retrieval response...";
-        if (liveSpeechStatus) liveSpeechStatus.textContent = "Deciphering...";
+        if (liveSpeechStatus) liveSpeechStatus.textContent = "Thinking...";
         if (livePulseDot) livePulseDot.classList.remove("active");
         Loader.show("Transcribing and retrieving from MSMARCO-XI...");
 
+        // Stop live recognition
         if (liveRecognition) {
             try { liveRecognition.stop(); } catch(e) {}
             liveRecognition = null;
         }
 
+        // Disconnect audio processors
         if (scriptProcessor)  { scriptProcessor.disconnect(); scriptProcessor.onaudioprocess = null; }
         if (audioInput)       { audioInput.disconnect(); }
         if (audioStream)      { audioStream.getTracks().forEach(t => t.stop()); }
         if (audioContext)     { audioContext.close(); }
 
         const pcmWavBlob = exportWAV(recordingBuffer, sampleRate);
-        if (pcmWavBlob.size < 1000) {
+        const capturedSpeechText = (liveFinalTranscript + " " + liveInterimTranscript).trim();
+
+        // Check if there is captured audio or speech text
+        if (pcmWavBlob.size < 1000 && !capturedSpeechText) {
             Loader.hide();
             updateMicState("idle", "Tap sphere to speak");
             if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
             if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
-            Toast.warning("Short Speech", "Speech was too brief. Please speak clearly.");
+            Toast.warning("Short Speech", "No speech detected. Please tap and speak clearly.");
             return;
         }
 
-        const topK     = parseInt(topKSlider.value, 10);
+        const topK = parseInt(topKSlider.value, 10);
         const formData = new FormData();
         formData.append("file", pcmWavBlob, "query.wav");
+
+        activeAbortController = new AbortController();
 
         try {
             const response = await fetch(`/api/ask-voice?top_k=${topK}`, {
                 method: "POST",
-                body: formData
+                body: formData,
+                signal: activeAbortController.signal
             });
+
+            if (thisSessionId !== currentSessionId) return; // Discard stale session
 
             if (!response.ok) {
                 const errData = await response.json();
@@ -747,6 +932,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
+            if (thisSessionId !== currentSessionId) return;
+
             renderResults(data);
 
             if (transcriptionText && data.transcript) {
@@ -757,33 +944,43 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.audio) {
                 currentAudioBase64 = data.audio;
                 replayAudioBtn.classList.remove("hidden");
-                playAudio(data.audio);
+                playAudio(data.audio, thisSessionId);
             } else {
                 updateMicState("idle", "Tap sphere to speak");
                 if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
             }
 
         } catch (err) {
-            updateMicState("idle", "Tap sphere to speak");
-            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
-            if (liveSpeechStatus) liveSpeechStatus.textContent = "Error";
-            Toast.error("Oracle Notice", err.message);
+            if (thisSessionId === currentSessionId && err.name !== "AbortError") {
+                updateMicState("idle", "Tap sphere to speak");
+                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+                if (liveSpeechStatus) liveSpeechStatus.textContent = "Error";
+                Toast.error("Oracle Notice", err.message);
+            }
         } finally {
             Loader.hide();
         }
     }
 
-    // TTS audio playback with live audio analysis animation
-    let ttsAudioCtx = null;
-    let ttsAnalyser = null;
-    let ttsSource = null;
-    let ttsAnimId = null;
 
-    function playAudio(audioBase64) {
-        updateMicState("speaking", "Chanting Answer…");
-        if (oracleSubhint) oracleSubhint.textContent = "Oracle voice synthesis in progress...";
+    // ============================================================
+    // 19. TTS AUDIO PLAYBACK WITH IMMEDIATE INTERRUPTIBILITY
+    // ============================================================
+    function playAudio(audioBase64, sessionId) {
+        if (sessionId !== currentSessionId) return; // Discard stale audio
+
+        updateMicState("speaking", "Speaking… Tap to interrupt");
+        if (oracleSubhint) oracleSubhint.textContent = "Oracle voice synthesis in progress... Tap sphere to stop.";
+        if (liveSpeechStatus) liveSpeechStatus.textContent = "Speaking...";
+        if (speechHint) speechHint.textContent = "Tap the sphere at any time to interrupt and ask another question";
+
         agentAudio.src = audioBase64;
-        agentAudio.play();
+        const playPromise = agentAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.log("Audio play notice:", e);
+            });
+        }
 
         try {
             if (!ttsAudioCtx) {
@@ -802,7 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const pcmData = new Uint8Array(ttsAnalyser.frequencyBinCount);
             function trackTTSVolume() {
-                if (agentAudio.paused || agentAudio.ended) {
+                if (sessionId !== currentSessionId || agentAudio.paused || agentAudio.ended) {
                     cancelAnimationFrame(ttsAnimId);
                     return;
                 }
@@ -818,7 +1015,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (e) {
             const fallbackIv = setInterval(() => {
-                if (agentAudio.paused || agentAudio.ended) {
+                if (sessionId !== currentSessionId || agentAudio.paused || agentAudio.ended) {
                     clearInterval(fallbackIv);
                     return;
                 }
@@ -827,21 +1024,28 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         agentAudio.onended = () => {
-            cancelAnimationFrame(ttsAnimId);
-            updateMicState("idle", "Tap sphere to speak");
-            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+            if (sessionId === currentSessionId) {
+                if (ttsAnimId) cancelAnimationFrame(ttsAnimId);
+                updateMicState("idle", "Tap sphere to speak");
+                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+                if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
+                if (speechHint) speechHint.textContent = "Click the sphere again to ask another question";
+            }
         };
+
         agentAudio.onerror = () => {
-            cancelAnimationFrame(ttsAnimId);
-            updateMicState("idle", "Tap sphere to speak");
-            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
-            Toast.error("Audio Notice", "Could not play audio response.");
+            if (sessionId === currentSessionId) {
+                if (ttsAnimId) cancelAnimationFrame(ttsAnimId);
+                updateMicState("idle", "Tap sphere to speak");
+                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
+                if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
+            }
         };
     }
 
 
     // ============================================================
-    // 16. RENDER RESULTS
+    // 20. RENDER RESULTS
     // ============================================================
     function renderResults(data) {
         placeholderState.classList.add("hidden");
@@ -922,7 +1126,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 17. WAV EXPORT HELPERS
+    // 21. WAV EXPORT HELPERS
     // ============================================================
     function exportWAV(buffers, originalSampleRate) {
         const targetSampleRate   = 16000;
