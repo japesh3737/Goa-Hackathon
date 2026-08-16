@@ -684,17 +684,78 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    let liveRecognition       = null;
+    let silenceTimeout        = null;
+    let liveFinalTranscript   = "";
+    let liveInterimTranscript = "";
+
     async function startRecording() {
         stopAISpeech();
         const thisSessionId = currentSessionId;
 
-        recordingBuffer = [];
-        isRecording     = true;
-        currentAudioBase64 = null;
+        recordingBuffer       = [];
+        isRecording           = true;
+        currentAudioBase64    = null;
+        liveFinalTranscript   = "";
+        liveInterimTranscript = "";
 
         updateMicState("listening", "Chanting… Tap sphere to seal");
-        transcriptionCard.classList.add("hidden");
+        transcriptionCard.classList.remove("hidden");
+        transcriptionText.textContent = "Listening to your voice...";
 
+        // 1. Web Speech API live stream
+        try {
+            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRec) {
+                liveRecognition = new SpeechRec();
+                liveRecognition.continuous = true;
+                liveRecognition.interimResults = true;
+                liveRecognition.lang = "en-US";
+                liveRecognition.maxAlternatives = 1;
+
+                liveRecognition.onresult = (event) => {
+                    if (thisSessionId !== currentSessionId || !isRecording) return;
+
+                    let interim = "";
+                    let finalStr = "";
+
+                    for (let i = 0; i < event.results.length; ++i) {
+                        const res = event.results[i];
+                        if (res.isFinal) {
+                            finalStr += res[0].transcript + " ";
+                        } else {
+                            interim += res[0].transcript + " ";
+                        }
+                    }
+
+                    if (finalStr.trim()) liveFinalTranscript = finalStr.trim();
+                    liveInterimTranscript = interim.trim();
+
+                    const combined = (liveFinalTranscript + " " + liveInterimTranscript).trim();
+                    if (combined) {
+                        transcriptionText.textContent = combined;
+
+                        // Natural silence auto-send debounce (2.6s after speaking)
+                        if (silenceTimeout) clearTimeout(silenceTimeout);
+                        silenceTimeout = setTimeout(() => {
+                            if (isRecording && thisSessionId === currentSessionId) {
+                                stopRecordingAndSend();
+                            }
+                        }, 2600);
+                    }
+                };
+
+                liveRecognition.onerror = (e) => {
+                    console.log("Web Speech API notice:", e.error);
+                };
+
+                liveRecognition.start();
+            }
+        } catch (e) {
+            console.log("Web Speech API fallback:", e);
+        }
+
+        // 2. AudioContext recording for high-accuracy backend STT
         try {
             audioStream = await navigator.mediaDevices.getUserMedia({
                 audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -744,8 +805,18 @@ document.addEventListener("DOMContentLoaded", () => {
         isRecording = false;
         const thisSessionId = currentSessionId;
 
+        if (silenceTimeout) {
+            clearTimeout(silenceTimeout);
+            silenceTimeout = null;
+        }
+
         updateMicState("processing", "Deciphering spoken words…");
         Loader.show("Transcribing sacred speech…");
+
+        if (liveRecognition) {
+            try { liveRecognition.stop(); } catch(e) {}
+            liveRecognition = null;
+        }
 
         if (scriptProcessor)  { scriptProcessor.disconnect(); scriptProcessor.onaudioprocess = null; }
         if (audioInput)       { audioInput.disconnect(); }
@@ -753,7 +824,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (audioContext)     { audioContext.close(); }
 
         const pcmWavBlob = exportWAV(recordingBuffer, sampleRate);
-        if (pcmWavBlob.size < 1000) {
+        const capturedText = (liveFinalTranscript + " " + liveInterimTranscript).trim();
+
+        if (pcmWavBlob.size < 1000 && !capturedText) {
             Loader.hide();
             updateMicState("idle", "Tap sphere to speak");
             Toast.warning("Short Chant", "Speech was too brief. Please speak clearly.");
