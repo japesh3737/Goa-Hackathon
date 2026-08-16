@@ -46,23 +46,28 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
+                // Spindles pull apart vertically as the scroll unrolls:
+                // Top spindle moves upward along top edge
                 unrollTl.to(topSpindle, {
                     y: -60,
                     scale: 0.98,
                     ease: "power1.inOut"
                 }, 0);
 
+                // Bottom spindle rolls downward along bottom edge
                 unrollTl.to(bottomSpindle, {
                     y: 70,
                     scale: 1.02,
                     ease: "power1.inOut"
                 }, 0);
 
+                // Parchment viewport height expands from initial window to full sanctuary opening
                 unrollTl.to(parchmentGate, {
                     height: "82vh",
                     ease: "power1.inOut"
                 }, 0);
 
+                // 4-Layer Parallax scrubbing inside the opening parchment
                 const layers = [
                     { layer: "1", yPercent: 45 },
                     { layer: "2", yPercent: 30 },
@@ -76,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
+                // Fade out prompt on scroll
                 if (heroPrompt) {
                     unrollTl.to(heroPrompt, { opacity: 0, y: 25, ease: "power1.out" }, 0.05);
                 }
@@ -95,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (lenisInstance) {
             lenisInstance.scrollTo(target, {
                 offset: -20,
-                duration: 1.6,
+                duration: 1.6, // Moderate cinematic unrolling speed
                 easing: (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
             });
         } else {
@@ -121,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 2. TOAST NOTIFICATION SYSTEM
+    // 2. TOAST NOTIFICATION SYSTEM (HERITAGE THEME)
     // ============================================================
     const Toast = {
         _container: document.getElementById("toast-container"),
@@ -165,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 3. CLEAN LOADER
+    // 3. ROYAL LOADER
     // ============================================================
     const Loader = {
         _overlay: document.getElementById("loader-overlay"),
@@ -182,7 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 4. ARTISTIC AI SOUND INSTALLATION (OCEAN RIPPLES & SAND WAVES)
+    // 4. GOLDEN SOLAR WEBGL VOICE DICTATOR SPHERE
+    //    Small resting core -> massive dynamic expansion with voice!
     // ============================================================
     const VoiceDictator = (() => {
         const canvas = document.getElementById("voice-canvas");
@@ -219,32 +226,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 vec2 uv   = norm * 2.0 - 1.0;
                 uv.x     *= uResolution.x / uResolution.y;
 
-                float t   = uTime * 0.45;
-                float amp = clamp(uAmplitude, 0.0, 1.6);
+                float t   = uTime * 0.5;
+                float amp = clamp(uAmplitude, 0.0, 1.8);
 
-                // Ocean sound wave ripples
-                float radius    = 0.08 + amp * 0.42 + sin(t * 1.2) * 0.007;
-                float thickness = 0.030 + amp * 0.15 + sin(t * 0.8) * 0.005;
+                // Compact base radius (0.07), expanding up to 0.65+ on loud speech!
+                float radius    = 0.07 + amp * 0.44 + sin(t * 1.3) * 0.008;
+                float thickness = 0.028 + amp * 0.16 + sin(t * 0.9) * 0.006;
 
                 float dist  = length(uv);
                 float ring  = smoothstep(radius + thickness, radius, dist)
                             - smoothstep(radius, radius - thickness, dist);
-                float glow  = exp(-12.0 * abs(dist - radius) / (1.0 + amp * 0.8));
-                float halo  = exp(-4.5 * dist * (1.0 - amp * 0.3));
+                float glow  = exp(-14.0 * abs(dist - radius) / (1.0 + amp * 0.9));
+                float halo  = exp(-5.0 * dist * (1.0 - amp * 0.35));
 
-                float intensity = clamp(ring * 0.90 + glow * 0.65 + halo * 0.18, 0.0, 1.0);
+                float intensity = clamp(ring * 0.92 + glow * 0.68 + halo * 0.16, 0.0, 1.0);
                 float threshold = bayerDither(gl_FragCoord.xy);
                 float shade     = step(threshold, intensity);
 
-                // Soft Tropical & Ocean Wave Palette
-                vec3 oceanMuted = vec3(0.47, 0.66, 0.63); // #78A9A0 Muted Ocean Teal
-                vec3 warmCream  = vec3(0.96, 0.92, 0.87); // #F5EBDD Warm Cream
-                vec3 softCoral  = vec3(0.85, 0.51, 0.42); // #D9826B Soft Terracotta
+                // Rich Solar Gold & Amber Palette
+                vec3 goldLight = vec3(0.99, 0.88, 0.35); // Solar Gold
+                vec3 amberDeep = vec3(0.85, 0.52, 0.08); // Warm Amber
+                vec3 color     = mix(amberDeep, goldLight, clamp(intensity * 1.2, 0.0, 1.0));
 
-                vec3 color = mix(oceanMuted, warmCream, clamp(intensity * 1.2, 0.0, 1.0));
-                color = mix(color, softCoral, clamp(amp * 0.35, 0.0, 0.5));
-
-                gl_FragColor = vec4(color * shade, shade * 0.96);
+                gl_FragColor = vec4(color * shade, shade * 0.98);
             }
         `;
 
@@ -279,33 +283,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
             resize();
             gl.useProgram(prog);
-            gl.clearColor(0.078, 0.20, 0.15, 1.0);
+            gl.clearColor(0.008, 0.03, 0.02, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
+            // Subtle gentle breath when resting idle
             if (currentState === "idle") {
-                const idleBreath = 0.025 + 0.02 * (0.5 + 0.5 * Math.sin(time * 0.0016));
+                const idleBreath = 0.025 + 0.02 * (0.5 + 0.5 * Math.sin(time * 0.0018));
                 targetAmplitude = idleBreath;
             } else if (currentState === "processing") {
-                const pulseProcessing = 0.18 + 0.12 * (0.5 + 0.5 * Math.sin(time * 0.005));
+                const pulseProcessing = 0.2 + 0.15 * (0.5 + 0.5 * Math.sin(time * 0.006));
                 targetAmplitude = pulseProcessing;
             }
 
-            const easeFactor = (targetAmplitude > amplitude) ? 0.26 : 0.085;
+            // Snappy attack, smooth decay
+            const easeFactor = (targetAmplitude > amplitude) ? 0.28 : 0.085;
             amplitude += (targetAmplitude - amplitude) * easeFactor;
 
             if (uniforms.time)       gl.uniform1f(uniforms.time, time * 0.001);
             if (uniforms.amplitude)  gl.uniform1f(uniforms.amplitude, amplitude);
             if (uniforms.resolution) gl.uniform2f(uniforms.resolution, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
+            // Dynamically scale the outer orb wrapper based on vocal amplitude
             if (sphereWrapper) {
-                const scale       = 1.0 + amplitude * 0.10;
-                const glowSize    = 25 + amplitude * 120;
-                const glowOpacity = 0.15 + amplitude * 0.45;
+                const scale       = 1.0 + amplitude * 0.12;
+                const glowSize    = 30 + amplitude * 160;
+                const glowOpacity = 0.15 + amplitude * 0.65;
                 sphereWrapper.style.transform = `scale(${scale.toFixed(4)})`;
                 sphereWrapper.style.boxShadow = `
-                    0 0 0 1.5px rgba(245, 235, 221, ${(0.22 + amplitude * 0.35).toFixed(3)}),
-                    0 8px 24px rgba(0, 0, 0, 0.35),
-                    0 0 ${glowSize.toFixed(1)}px rgba(120, 169, 160, ${glowOpacity.toFixed(3)})
+                    0 0 0 1.5px rgba(251,191,36,${(0.3 + amplitude * 0.5).toFixed(3)}),
+                    0 0 ${glowSize.toFixed(1)}px rgba(251,191,36,${glowOpacity.toFixed(3)}),
+                    0 0 ${(glowSize * 1.6).toFixed(1)}px rgba(16,185,129,${(glowOpacity * 0.45).toFixed(3)})
                 `;
             }
 
@@ -365,13 +372,14 @@ document.addEventListener("DOMContentLoaded", () => {
             if (state === "idle") {
                 targetAmplitude = 0.03;
             } else if (state === "processing") {
-                targetAmplitude = 0.25;
+                targetAmplitude = 0.3;
             }
         }
 
+        // Live loudness callback with wide dynamic range
         function setLiveLoudness(loudness) {
             if (currentState === "listening" || currentState === "speaking") {
-                targetAmplitude = Math.min(1.5, Math.max(0.03, loudness));
+                targetAmplitude = Math.min(1.6, Math.max(0.03, loudness));
             }
         }
 
@@ -388,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     // 5. TYPEWRITER EFFECT
     // ============================================================
-    function typewriter(element, text, speed = 18, onComplete) {
+    function typewriter(element, text, speed = 22, onComplete) {
         element.innerHTML = "";
         let index = 0;
 
@@ -406,8 +414,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(() => {
                     cursor.style.animation   = "none";
                     cursor.style.opacity     = "0";
-                    cursor.style.transition  = "opacity .4s";
-                }, 700);
+                    cursor.style.transition  = "opacity .5s";
+                }, 800);
                 if (typeof onComplete === "function") onComplete();
             }
         }
@@ -418,7 +426,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     // 6. NUMBER TICKER
     // ============================================================
-    function tickNumber(element, target, duration = 750) {
+    function tickNumber(element, target, duration = 850) {
         const start   = performance.now();
         const decimals = target < 1 ? 3 : target < 10 ? 2 : 1;
 
@@ -434,7 +442,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 7. DOM ELEMENT REFERENCES & STATE MANAGEMENT
+    // 7. DOM ELEMENT REFERENCES
     // ============================================================
     const questionInput     = document.getElementById("question-input");
     const topKSlider        = document.getElementById("top-k-slider");
@@ -445,12 +453,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const micBtn            = document.getElementById("mic-btn");
     const voiceStatusLabel  = document.getElementById("voice-status-label");
-    const oracleSubhint     = document.getElementById("oracle-subhint");
     const transcriptionCard = document.getElementById("transcription-card");
     const transcriptionText = document.getElementById("transcription-text");
-    const liveSpeechStatus  = document.getElementById("live-speech-status");
-    const livePulseDot      = document.getElementById("live-pulse-dot");
-    const speechHint        = document.getElementById("speech-hint");
     const clearMemoryBtn    = document.getElementById("clear-memory-btn");
 
     const placeholderState  = document.getElementById("placeholder-state");
@@ -472,27 +476,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const metaLLM           = document.getElementById("meta-llm");
     const metaTTS           = document.getElementById("meta-tts");
 
-    // Unified Voice State Machine & Session Control
-    let currentVoiceState      = "idle"; // "idle" | "listening" | "processing" | "speaking"
-    let currentSessionId       = 0;      // Incremented on interruptions to cancel stale callbacks
-    let activeAbortController  = null;   // Aborts in-flight network requests
-    let audioContext           = null;
-    let audioStream            = null;
-    let scriptProcessor        = null;
-    let audioInput             = null;
-    let recordingBuffer        = [];
-    let sampleRate             = 0;
-    let currentAudioBase64     = null;
-    let liveRecognition        = null;
-    let silenceTimeout         = null;
-    let liveFinalTranscript    = "";
-    let liveInterimTranscript  = "";
-
-    // TTS Web Audio Reactivity nodes
-    let ttsAudioCtx  = null;
-    let ttsAnalyser  = null;
-    let ttsSource    = null;
-    let ttsAnimId    = null;
+    let audioContext       = null;
+    let audioStream        = null;
+    let scriptProcessor    = null;
+    let audioInput         = null;
+    let isRecording        = false;
+    let recordingBuffer    = [];
+    let sampleRate         = 0;
+    let currentAudioBase64 = null;
 
 
     // ============================================================
@@ -508,7 +499,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     promptChips.forEach((chip) => {
         chip.addEventListener("click", () => {
-            stopAISpeech();
             questionInput.value = chip.dataset.query;
             ragForm.dispatchEvent(new Event("submit"));
         });
@@ -524,19 +514,19 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await resp.json();
             if (data.status === "healthy") {
                 statusPillText.textContent = `System Active (${data.total_indexed_documents} indexed)`;
-                if (statusGem) statusGem.style.backgroundColor = "var(--ocean-muted)";
+                if (statusGem) statusGem.style.backgroundColor = "var(--emerald-gem)";
             } else {
                 statusPillText.textContent = "Degraded — check index";
-                if (statusGem) statusGem.style.backgroundColor = "var(--accent-ochre)";
-                Toast.warning("System Notice", "Vector index status is degraded.");
+                if (statusGem) statusGem.style.backgroundColor = "var(--gold-amber)";
+                Toast.warning("System Degraded", "Vector index may not be loaded. Run build_index.py.");
             }
             if (data.stt_provider) metaSTT.textContent = data.stt_provider.toUpperCase();
             if (data.llm_provider) metaLLM.textContent = data.llm_provider.toUpperCase();
             if (data.tts_provider) metaTTS.textContent = data.tts_provider.toUpperCase();
         } catch (err) {
             statusPillText.textContent = "Oracle Offline";
-            if (statusGem) statusGem.style.backgroundColor = "var(--coral-soft)";
-            Toast.error("Connection Notice", "Cannot reach the API server.");
+            if (statusGem) statusGem.style.backgroundColor = "var(--coral-accent)";
+            Toast.error("Oracle Offline", "Cannot reach the API server.");
         }
     }
     checkHealth();
@@ -547,7 +537,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // ============================================================
     clearMemoryBtn.addEventListener("click", async () => {
         try {
-            stopAISpeech();
             const resp = await fetch("/api/memory/clear", { method: "POST" });
             const data = await resp.json();
             Toast.success("Memory Purified", data.message || "Conversational history reset.");
@@ -561,18 +550,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // 12. REPLAY AUDIO + COPY ANSWER
     // ============================================================
     replayAudioBtn.addEventListener("click", () => {
-        if (currentAudioBase64) {
-            stopAISpeech();
-            currentSessionId++;
-            playAudio(currentAudioBase64, currentSessionId);
-        }
+        if (currentAudioBase64) playAudio(currentAudioBase64);
     });
 
     copyAnsBtn.addEventListener("click", () => {
         const text = answerContent.innerText || answerContent.textContent;
         navigator.clipboard.writeText(text).then(() => {
             copyBtnText.textContent = "✓ Inscribed!";
-            copyAnsBtn.style.color  = "var(--sand-warm)";
+            copyAnsBtn.style.color  = "var(--gold-bright)";
             setTimeout(() => {
                 copyBtnText.textContent = "Copy Inscription";
                 copyAnsBtn.style.color  = "";
@@ -584,91 +569,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 13. CENTRAL VOICE STATE UPDATE HELPER
+    // 13. MIC STATE MANAGEMENT
     // ============================================================
+    // ============================================================
+    // 13. MIC & VOICE STATE MANAGEMENT
+    // ============================================================
+    let currentVoiceState     = "idle"; // 'idle', 'listening', 'processing', 'speaking'
+    let currentSessionId      = 0;
+    let activeAbortController = null;
+
     function updateMicState(state, message) {
         currentVoiceState = state;
-        if (voiceStatusLabel) voiceStatusLabel.textContent = message;
+        voiceStatusLabel.textContent = message;
         VoiceDictator.setState(state);
     }
 
-
-    // ============================================================
-    // 14. COMPLETE & IMMEDIATE SPEECH / AUDIO INTERRUPTION
-    // ============================================================
     function stopAISpeech() {
-        // 1. Invalidate current session ID immediately so no stale callbacks run
         currentSessionId++;
-
-        // 2. Cancel Browser SpeechSynthesis if active
         if (window.speechSynthesis) {
-            try {
-                window.speechSynthesis.cancel();
-            } catch (e) {
-                console.warn("SpeechSynthesis cancel notice:", e);
-            }
+            try { window.speechSynthesis.cancel(); } catch(e) {}
         }
-
-        // 3. Pause & unload HTML5 Audio element immediately
         if (agentAudio) {
             try {
                 agentAudio.pause();
                 agentAudio.removeAttribute("src");
                 agentAudio.load();
-            } catch (e) {
-                console.warn("agentAudio stop notice:", e);
-            }
+            } catch(e) {}
         }
-
-        // 4. Cancel active animation & suspend Web Audio Context
         if (ttsAnimId) {
             cancelAnimationFrame(ttsAnimId);
             ttsAnimId = null;
         }
-        if (ttsAudioCtx && ttsAudioCtx.state === "running") {
-            try { ttsAudioCtx.suspend(); } catch (e) {}
-        }
-
-        // 5. Abort in-flight network request
         if (activeAbortController) {
-            try { activeAbortController.abort(); } catch (e) {}
+            try { activeAbortController.abort(); } catch(e) {}
             activeAbortController = null;
         }
-
-        // 6. Clear silence timer
-        if (silenceTimeout) {
-            clearTimeout(silenceTimeout);
-            silenceTimeout = null;
-        }
-
-        // 7. Reset Visual & Status indicators
         updateMicState("idle", "Tap sphere to speak");
-        if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
-        if (livePulseDot) livePulseDot.classList.remove("active");
-        if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
-        if (speechHint) speechHint.textContent = "Click the sphere again to complete your question";
         Loader.hide();
     }
 
 
     // ============================================================
-    // 15. TEXT FORM SUBMISSION (WITH CANCELLATION SUPPORT)
+    // 14. TEXT FORM SUBMISSION
     // ============================================================
     ragForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const question = questionInput.value.trim();
         if (!question) return;
 
-        // Stop any current speech before text query
         stopAISpeech();
         const thisSessionId = currentSessionId;
 
         const topK = parseInt(topKSlider.value, 10);
         submitBtn.disabled = true;
         submitBtn.querySelector(".btn-text").textContent = "Consulting Scroll…";
-        Loader.show("Searching the Knowledge Archive…");
-        updateMicState("processing", "Thinking…");
-        if (liveSpeechStatus) liveSpeechStatus.textContent = "Thinking...";
+        Loader.show("Searching the MSMARCO-XI Archive…");
+        updateMicState("processing", "Deciphering query…");
 
         activeAbortController = new AbortController();
 
@@ -680,7 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 signal: activeAbortController.signal
             });
 
-            if (thisSessionId !== currentSessionId) return; // Stale session ignored
+            if (thisSessionId !== currentSessionId) return;
 
             if (!response.ok) {
                 const errData = await response.json();
@@ -694,18 +650,13 @@ document.addEventListener("DOMContentLoaded", () => {
             replayAudioBtn.classList.add("hidden");
             data.transcript = question;
             data.retrieved_documents = data.retrieved_documents || [];
-            
-            transcriptionText.textContent = question;
-            if (liveSpeechStatus) liveSpeechStatus.textContent = "Inscribed";
             updateMicState("idle", "Tap sphere to speak");
-            
             renderResults(data);
 
         } catch (err) {
             if (thisSessionId === currentSessionId && err.name !== "AbortError") {
                 updateMicState("idle", "Tap sphere to speak");
-                if (liveSpeechStatus) liveSpeechStatus.textContent = "Error";
-                Toast.error("Oracle Notice", err.message);
+                Toast.error("Oracle Error", err.message);
             }
         } finally {
             Loader.hide();
@@ -716,115 +667,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 16. MICROPHONE BUTTON INTELLIGENT TOGGLE HANDLER
+    // 15. LIVE VOICE RECORDING & INTELLIGENT TOGGLE WITH BARGE-IN
     // ============================================================
     micBtn.addEventListener("click", () => {
         if (currentVoiceState === "speaking") {
-            // STATE 3: AI IS SPEAKING -> INTERRUPT IMMEDIATELY & START LISTENING FOR NEXT QUESTION
+            // Instant Interruption: Stop speech and immediately start next question!
             stopAISpeech();
             startRecording();
-        } else if (currentVoiceState === "listening") {
-            // STATE 2: CURRENTLY LISTENING -> STOP & SEND
+        } else if (isRecording) {
             stopRecordingAndSend();
         } else if (currentVoiceState === "processing") {
-            // Processing -> Interrupt and start fresh
             stopAISpeech();
             startRecording();
         } else {
-            // STATE 1: IDLE -> START LISTENING
             startRecording();
         }
     });
 
-
-    // ============================================================
-    // 17. START LISTENING (WITH TRUE BARGE-IN & ROBUST SPEECH STREAMING)
-    // ============================================================
     async function startRecording() {
-        // Stop any old speech first
         stopAISpeech();
         const thisSessionId = currentSessionId;
 
         recordingBuffer = [];
-        liveFinalTranscript = "";
-        liveInterimTranscript = "";
+        isRecording     = true;
+        currentAudioBase64 = null;
 
-        updateMicState("listening", "Listening… Tap to seal");
-        if (oracleSubhint) oracleSubhint.textContent = "Speak clearly into your microphone...";
-        if (liveSpeechStatus) liveSpeechStatus.textContent = "Listening...";
-        if (livePulseDot) livePulseDot.classList.add("active");
-        if (transcriptionText) transcriptionText.textContent = "Listening to your voice...";
-        if (speechHint) speechHint.textContent = "Tap sphere to send, or pause when finished";
+        updateMicState("listening", "Chanting… Tap sphere to seal");
+        transcriptionCard.classList.add("hidden");
 
-        // 17.1 Web Speech API Live Recognition
-        try {
-            const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRec) {
-                liveRecognition = new SpeechRec();
-                liveRecognition.continuous = true;
-                liveRecognition.interimResults = true;
-                liveRecognition.lang = "en-US";
-                liveRecognition.maxAlternatives = 1;
-
-                liveRecognition.onresult = (event) => {
-                    if (thisSessionId !== currentSessionId) return;
-
-                    let interim = "";
-                    let finalStr = "";
-
-                    for (let i = 0; i < event.results.length; ++i) {
-                        const res = event.results[i];
-                        if (res.isFinal) {
-                            finalStr += res[0].transcript + " ";
-                        } else {
-                            interim += res[0].transcript + " ";
-                        }
-                    }
-
-                    if (finalStr.trim()) {
-                        liveFinalTranscript = finalStr.trim();
-                    }
-                    liveInterimTranscript = interim.trim();
-
-                    const combined = (liveFinalTranscript + " " + liveInterimTranscript).trim();
-                    if (combined) {
-                        transcriptionText.textContent = combined;
-
-                        // Natural silence auto-send debounce (2.6s silence after user spoke)
-                        if (silenceTimeout) clearTimeout(silenceTimeout);
-                        silenceTimeout = setTimeout(() => {
-                            if (currentVoiceState === "listening" && thisSessionId === currentSessionId) {
-                                stopRecordingAndSend();
-                            }
-                        }, 2600);
-                    }
-                };
-
-                liveRecognition.onerror = (e) => {
-                    console.log("Web Speech API notice:", e.error);
-                };
-
-                liveRecognition.onend = () => {
-                    // Safe cleanup if recognition stops naturally
-                    if (currentVoiceState === "listening" && thisSessionId === currentSessionId && !recordingBuffer.length) {
-                        // Keep alive if still recording
-                    }
-                };
-
-                liveRecognition.start();
-            }
-        } catch (e) {
-            console.log("Web Speech API initialization fallback:", e);
-        }
-
-        // 17.2 MediaStream AudioContext Recording & Live Energy Analysis
         try {
             audioStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                },
+                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
                 video: false
             });
 
@@ -841,7 +714,7 @@ document.addEventListener("DOMContentLoaded", () => {
             scriptProcessor = audioContext.createScriptProcessor(2048, 1, 1);
 
             scriptProcessor.onaudioprocess = (e) => {
-                if (currentVoiceState !== "listening" || thisSessionId !== currentSessionId) return;
+                if (!isRecording || thisSessionId !== currentSessionId) return;
                 const channelData = e.inputBuffer.getChannelData(0);
                 recordingBuffer.push(new Float32Array(channelData));
 
@@ -850,7 +723,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     sumSquares += channelData[i] * channelData[i];
                 }
                 const rms = Math.sqrt(sumSquares / channelData.length);
-                const voiceLoudness = Math.min(1.5, Math.max(0.03, (rms - 0.002) * 8.5));
+                const voiceLoudness = Math.min(1.6, Math.max(0.03, (rms - 0.002) * 9.0));
                 VoiceDictator.setLiveLoudness(voiceLoudness);
             };
 
@@ -859,72 +732,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (err) {
             if (thisSessionId === currentSessionId) {
+                isRecording = false;
                 updateMicState("idle", "Tap sphere to speak");
-                if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
-                if (livePulseDot) livePulseDot.classList.remove("active");
-                Toast.error("Microphone Notice", `Microphone access denied: ${err.message}`);
+                Toast.error("Oracle Mic Error", `Microphone access denied: ${err.message}`);
             }
         }
     }
 
-
-    // ============================================================
-    // 18. STOP LISTENING AND SEND QUERY
-    // ============================================================
     async function stopRecordingAndSend() {
-        if (currentVoiceState !== "listening") return;
+        if (!isRecording) return;
+        isRecording = false;
         const thisSessionId = currentSessionId;
 
-        if (silenceTimeout) {
-            clearTimeout(silenceTimeout);
-            silenceTimeout = null;
-        }
+        updateMicState("processing", "Deciphering spoken words…");
+        Loader.show("Transcribing sacred speech…");
 
-        updateMicState("processing", "Thinking…");
-        if (oracleSubhint) oracleSubhint.textContent = "Synthesizing neural retrieval response...";
-        if (liveSpeechStatus) liveSpeechStatus.textContent = "Thinking...";
-        if (livePulseDot) livePulseDot.classList.remove("active");
-        Loader.show("Transcribing and retrieving from MSMARCO-XI...");
-
-        // Stop live recognition
-        if (liveRecognition) {
-            try { liveRecognition.stop(); } catch(e) {}
-            liveRecognition = null;
-        }
-
-        // Disconnect audio processors
         if (scriptProcessor)  { scriptProcessor.disconnect(); scriptProcessor.onaudioprocess = null; }
         if (audioInput)       { audioInput.disconnect(); }
         if (audioStream)      { audioStream.getTracks().forEach(t => t.stop()); }
         if (audioContext)     { audioContext.close(); }
 
         const pcmWavBlob = exportWAV(recordingBuffer, sampleRate);
-        const capturedSpeechText = (liveFinalTranscript + " " + liveInterimTranscript).trim();
-
-        // Check if there is captured audio or speech text
-        if (pcmWavBlob.size < 1000 && !capturedSpeechText) {
+        if (pcmWavBlob.size < 1000) {
             Loader.hide();
             updateMicState("idle", "Tap sphere to speak");
-            if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
-            if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
-            Toast.warning("Short Speech", "No speech detected. Please tap and speak clearly.");
+            Toast.warning("Short Chant", "Speech was too brief. Please speak clearly.");
             return;
         }
 
-        const topK = parseInt(topKSlider.value, 10);
+        const topK     = parseInt(topKSlider.value, 10);
         const formData = new FormData();
         formData.append("file", pcmWavBlob, "query.wav");
 
         activeAbortController = new AbortController();
 
         try {
+            Loader.show("Retrieving from MSMARCO-XI Knowledge Base…");
             const response = await fetch(`/api/ask-voice?top_k=${topK}`, {
                 method: "POST",
                 body: formData,
                 signal: activeAbortController.signal
             });
 
-            if (thisSessionId !== currentSessionId) return; // Discard stale session
+            if (thisSessionId !== currentSessionId) return;
 
             if (!response.ok) {
                 const errData = await response.json();
@@ -936,10 +786,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             renderResults(data);
 
-            if (transcriptionText && data.transcript) {
-                transcriptionText.textContent = data.transcript;
-            }
-            if (liveSpeechStatus) liveSpeechStatus.textContent = "Inscribed";
+            transcriptionText.textContent = data.transcript;
+            transcriptionCard.classList.remove("hidden");
 
             if (data.audio) {
                 currentAudioBase64 = data.audio;
@@ -947,40 +795,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 playAudio(data.audio, thisSessionId);
             } else {
                 updateMicState("idle", "Tap sphere to speak");
-                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
             }
 
         } catch (err) {
             if (thisSessionId === currentSessionId && err.name !== "AbortError") {
                 updateMicState("idle", "Tap sphere to speak");
-                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
-                if (liveSpeechStatus) liveSpeechStatus.textContent = "Error";
-                Toast.error("Oracle Notice", err.message);
+                Toast.error("Oracle Error", err.message);
             }
         } finally {
             Loader.hide();
         }
     }
 
+    // TTS audio playback with live audio analysis animation & immediate interruptibility
+    let ttsAudioCtx = null;
+    let ttsAnalyser = null;
+    let ttsSource = null;
+    let ttsAnimId = null;
 
-    // ============================================================
-    // 19. TTS AUDIO PLAYBACK WITH IMMEDIATE INTERRUPTIBILITY
-    // ============================================================
     function playAudio(audioBase64, sessionId) {
-        if (sessionId !== currentSessionId) return; // Discard stale audio
+        if (sessionId !== undefined && sessionId !== currentSessionId) return;
+        const thisSessionId = sessionId || currentSessionId;
 
-        updateMicState("speaking", "Speaking… Tap to interrupt");
-        if (oracleSubhint) oracleSubhint.textContent = "Oracle voice synthesis in progress... Tap sphere to stop.";
-        if (liveSpeechStatus) liveSpeechStatus.textContent = "Speaking...";
-        if (speechHint) speechHint.textContent = "Tap the sphere at any time to interrupt and ask another question";
-
+        updateMicState("speaking", "Chanting Answer… (Tap to interrupt)");
         agentAudio.src = audioBase64;
-        const playPromise = agentAudio.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(e => {
-                console.log("Audio play notice:", e);
-            });
-        }
+        agentAudio.play().catch(e => console.log("Audio play notice:", e));
 
         try {
             if (!ttsAudioCtx) {
@@ -999,7 +838,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const pcmData = new Uint8Array(ttsAnalyser.frequencyBinCount);
             function trackTTSVolume() {
-                if (sessionId !== currentSessionId || agentAudio.paused || agentAudio.ended) {
+                if (thisSessionId !== currentSessionId || agentAudio.paused || agentAudio.ended) {
                     cancelAnimationFrame(ttsAnimId);
                     return;
                 }
@@ -1015,37 +854,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (e) {
             const fallbackIv = setInterval(() => {
-                if (sessionId !== currentSessionId || agentAudio.paused || agentAudio.ended) {
+                if (thisSessionId !== currentSessionId || agentAudio.paused || agentAudio.ended) {
                     clearInterval(fallbackIv);
                     return;
                 }
-                VoiceDictator.setLiveLoudness(0.2 + Math.random() * 0.6);
+                VoiceDictator.setLiveLoudness(0.2 + Math.random() * 0.7);
             }, 100);
         }
 
         agentAudio.onended = () => {
-            if (sessionId === currentSessionId) {
-                if (ttsAnimId) cancelAnimationFrame(ttsAnimId);
+            if (thisSessionId === currentSessionId) {
+                cancelAnimationFrame(ttsAnimId);
                 updateMicState("idle", "Tap sphere to speak");
-                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
-                if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
-                if (speechHint) speechHint.textContent = "Click the sphere again to ask another question";
             }
         };
-
         agentAudio.onerror = () => {
-            if (sessionId === currentSessionId) {
-                if (ttsAnimId) cancelAnimationFrame(ttsAnimId);
+            if (thisSessionId === currentSessionId) {
+                cancelAnimationFrame(ttsAnimId);
                 updateMicState("idle", "Tap sphere to speak");
-                if (oracleSubhint) oracleSubhint.textContent = "Chant your query aloud to awaken the knowledge archive";
-                if (liveSpeechStatus) liveSpeechStatus.textContent = "Standby";
+                Toast.error("Audio Error", "Failed to chant audio response.");
             }
         };
     }
 
 
     // ============================================================
-    // 20. RENDER RESULTS
+    // 16. RENDER RESULTS
     // ============================================================
     function renderResults(data) {
         placeholderState.classList.add("hidden");
@@ -1053,7 +887,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sourcesCard.classList.remove("hidden");
 
         answerContent.innerHTML = "";
-        typewriter(answerContent, data.answer || "No revelation inscribed.", 18);
+        typewriter(answerContent, data.answer || "No revelation inscribed.", 20);
 
         const meta = data.metadata || {};
         performanceBar.innerHTML = "";
@@ -1069,29 +903,34 @@ document.addEventListener("DOMContentLoaded", () => {
         metricDefs.forEach(({ key, label, unit }) => {
             if (meta[key] === undefined) return;
             const item    = document.createElement("div");
-            item.className = "perf-item";
+            item.className = "metric-item";
 
             const labelEl = document.createElement("span");
-            labelEl.className   = "perf-label";
+            labelEl.className   = "metric-label";
             labelEl.textContent = label;
 
             const valEl = document.createElement("span");
-            valEl.className   = "perf-val";
+            valEl.className   = "metric-value";
             valEl.textContent = "0.000";
+
+            const unitEl = document.createElement("span");
+            unitEl.className   = "metric-unit";
+            unitEl.textContent = unit;
 
             item.appendChild(labelEl);
             item.appendChild(valEl);
+            item.appendChild(unitEl);
             performanceBar.appendChild(item);
 
-            tickNumber(valEl, parseFloat(meta[key]) || 0, 750);
+            tickNumber(valEl, parseFloat(meta[key]) || 0, 850);
         });
 
         if (meta.cached) {
             const item    = document.createElement("div");
-            item.className = "perf-item";
+            item.className = "metric-item";
             item.innerHTML = `
-                <span class="perf-label">Cache</span>
-                <span class="perf-val" style="color:var(--ocean-muted)">⚡ HIT</span>
+                <span class="metric-label">Cache</span>
+                <span class="metric-value" style="color:var(--emerald-gem)">⚡ HIT</span>
             `;
             performanceBar.appendChild(item);
         }
@@ -1101,19 +940,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (data.sources && data.sources.length > 0) {
             data.sources.forEach((source, idx) => {
-                const item = document.createElement("div");
-                item.className = "source-item";
-                item.innerHTML = `
-                    <div class="source-header">
-                        <span class="source-title">${idx + 1}. ${escapeHtml(source.title || 'Document')} (ID: ${source.id})</span>
-                        <span class="source-score">Similarity: ${source.score}</span>
+                const card = document.createElement("div");
+                card.className = "source-card";
+                card.style.animationDelay = `${idx * 80}ms`;
+                card.innerHTML = `
+                    <div class="source-card-header">
+                        <span class="source-id">Manuscript Passage #${idx + 1} — ID: ${source.id}</span>
+                        <span class="score-badge">Similarity: ${source.score}</span>
                     </div>
                     <div class="source-text">${escapeHtml(source.text)}</div>
                 `;
-                sourcesList.appendChild(item);
+                sourcesList.appendChild(card);
             });
         } else {
-            sourcesList.innerHTML = `<p style="color:var(--text-muted);font-size:.875rem;">No evidence passages retrieved.</p>`;
+            sourcesList.innerHTML = `<p style="color:var(--text-muted-green);font-size:.875rem;">No evidence passages retrieved.</p>`;
         }
     }
 
@@ -1126,7 +966,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ============================================================
-    // 21. WAV EXPORT HELPERS
+    // 17. WAV EXPORT HELPERS
     // ============================================================
     function exportWAV(buffers, originalSampleRate) {
         const targetSampleRate   = 16000;
