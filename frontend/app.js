@@ -243,9 +243,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 float threshold = bayerDither(gl_FragCoord.xy);
                 float shade     = step(threshold, intensity);
 
-                // Rich Solar Goa Yellow & Deep Emerald Palette
-                vec3 goldLight = vec3(0.996, 0.882, 0.004); // #FEE101 Bright Yellow
-                vec3 amberDeep = vec3(0.012, 0.404, 0.208); // #036735 Deep Goa Green
+                // Rich Solar Gold & Amber Palette
+                vec3 goldLight = vec3(0.99, 0.88, 0.35); // Solar Gold
+                vec3 amberDeep = vec3(0.85, 0.52, 0.08); // Warm Amber
                 vec3 color     = mix(amberDeep, goldLight, clamp(intensity * 1.2, 0.0, 1.0));
 
                 gl_FragColor = vec4(color * shade, shade * 0.98);
@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             resize();
             gl.useProgram(prog);
-            gl.clearColor(0.012, 0.404, 0.208, 1.0);
+            gl.clearColor(0.008, 0.03, 0.02, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             // Subtle gentle breath when resting idle
@@ -307,12 +307,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (sphereWrapper) {
                 const scale       = 1.0 + amplitude * 0.12;
                 const glowSize    = 30 + amplitude * 160;
-                const glowOpacity = 0.2 + amplitude * 0.65;
+                const glowOpacity = 0.15 + amplitude * 0.65;
                 sphereWrapper.style.transform = `scale(${scale.toFixed(4)})`;
                 sphereWrapper.style.boxShadow = `
-                    0 0 0 1.5px rgba(254,225,1,${(0.35 + amplitude * 0.5).toFixed(3)}),
-                    0 0 ${glowSize.toFixed(1)}px rgba(254,225,1,${glowOpacity.toFixed(3)}),
-                    0 0 ${(glowSize * 1.6).toFixed(1)}px rgba(3,103,53,${(glowOpacity * 0.5).toFixed(3)})
+                    0 0 0 1.5px rgba(251,191,36,${(0.3 + amplitude * 0.5).toFixed(3)}),
+                    0 0 ${glowSize.toFixed(1)}px rgba(251,191,36,${glowOpacity.toFixed(3)}),
+                    0 0 ${(glowSize * 1.6).toFixed(1)}px rgba(16,185,129,${(glowOpacity * 0.45).toFixed(3)})
                 `;
             }
 
