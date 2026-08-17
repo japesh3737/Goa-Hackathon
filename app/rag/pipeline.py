@@ -117,15 +117,22 @@ class RAGPipeline:
 
         return response_obj
 
-    def answer_question_voice(self, audio_data: io.BytesIO, top_k: int = None) -> Dict[str, Any]:
+    def answer_question_voice(self, audio_data: io.BytesIO = None, top_k: int = None, client_transcript: str = None) -> Dict[str, Any]:
         """Speech Input -> STT -> RAG Retrieval -> LLM -> TTS -> Audio Output Pipeline with cache checks."""
         top_k = top_k or config.TOP_K
         start_time = time.time()
 
         # Step 1: Speech-To-Text Transcription
-        stt_start = time.time()
-        transcript = self.stt_provider.transcribe(audio_data)
-        stt_time = time.time() - stt_start
+        transcript = ""
+        stt_time = 0.0
+
+        if client_transcript and client_transcript.strip():
+            transcript = client_transcript.strip()
+            logger.info(f"Using client-side speech transcript: '{transcript}'")
+        elif audio_data:
+            stt_start = time.time()
+            transcript = self.stt_provider.transcribe(audio_data)
+            stt_time = time.time() - stt_start
 
         if not transcript or not transcript.strip():
             raise ValueError("No speech detected or transcription was empty.")
