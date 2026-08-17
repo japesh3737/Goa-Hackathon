@@ -4,41 +4,36 @@
    ================================================================ */
 
 :root {
-    /* Exact Reference Palette */
-    --goa-green:         #036735;
-    --goa-yellow:        #FEE101;
-    --goa-pink:          #FF0080;
-    
     /* Emerald & Jungle Botanical Core */
-    --bg-deep-jungle:    #036735;
-    --bg-emerald-dark:   #024d27;
-    --parchment-emerald: #045a2e;
-    --card-surface:      #04522a;
-    --card-surface-elev: #066233;
+    --bg-deep-jungle:    #030d07;
+    --bg-emerald-dark:   #061810;
+    --parchment-emerald: #09281a;
+    --card-surface:      #0d3423;
+    --card-surface-elev: #12402c;
     
-    /* Solar Gold & Warm Yellow Accents */
-    --gold-primary:      #FEE101;
-    --gold-bright:       #FEE101;
-    --gold-amber:        #e6cb00;
-    --gold-deep:         #b39d00;
-    --gold-glow:         rgba(254, 225, 1, 0.4);
+    /* Solar Gold & Warm Amber Accents */
+    --gold-primary:      #fbbf24;
+    --gold-bright:       #fde047;
+    --gold-amber:        #d97706;
+    --gold-deep:         #92400e;
+    --gold-glow:         rgba(251, 191, 36, 0.35);
     
-    /* Coastal Coral & Tropical Pink Accents */
-    --coral-accent:      #FF0080;
-    --emerald-gem:       #FEE101;
-    --emerald-glow:      rgba(254, 225, 1, 0.4);
+    /* Coastal Coral & Tropical Accents */
+    --coral-accent:      #fb7185;
+    --emerald-gem:       #10b981;
+    --emerald-glow:      rgba(16, 185, 129, 0.4);
     
     /* Royal Typography Tones */
-    --text-gold-light:   #FEE101;
-    --text-parchment:    #ffffff;
-    --text-muted-green:  #c2edd2;
-    --text-dim:          #90d3a7;
-    --text-dark-gold:    #036735;
+    --text-gold-light:   #fef3c7;
+    --text-parchment:    #f1f5f9;
+    --text-muted-green:  #a7f3d0;
+    --text-dim:          #6ee7b7;
+    --text-dark-gold:    #2d1b02;
     
     /* Borders & Structural Accents */
-    --border-gold-subtle:rgba(254, 225, 1, 0.32);
-    --border-gold-strong:rgba(254, 225, 1, 0.85);
-    --border-emerald:    rgba(254, 225, 1, 0.35);
+    --border-gold-subtle:rgba(251, 191, 36, 0.28);
+    --border-gold-strong:rgba(251, 191, 36, 0.65);
+    --border-emerald:    rgba(16, 185, 129, 0.25);
     
     /* Typography Stacks */
     --font-royal:        'Cinzel', serif;
