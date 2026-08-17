@@ -67,24 +67,34 @@ def upload_file(local_path, repo_path, token):
         "User-Agent": "UploadScript"
     }, method="PUT")
     
-    try:
-        with urllib.request.urlopen(req) as resp:
-            return "UPLOADED" if resp.status in (200, 201) else "FAILED"
-    except urllib.error.HTTPError as e:
-        # If sha conflict, re-fetch sha and retry once
-        if e.code in (409, 422, 400):
-            new_sha, _ = get_file_info(repo_path, token)
-            if new_sha:
-                payload["sha"] = new_sha
-                retry_req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "Content-Type": "application/json",
-                    "User-Agent": "UploadScript"
-                }, method="PUT")
-                with urllib.request.urlopen(retry_req) as resp2:
-                    return "UPLOADED" if resp2.status in (200, 201) else "FAILED"
-        raise
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return "UPLOADED" if resp.status in (200, 201) else "FAILED"
+        except urllib.error.HTTPError as e:
+            if e.code in (409, 422, 400):
+                new_sha, _ = get_file_info(repo_path, token)
+                if new_sha:
+                    payload["sha"] = new_sha
+                    retry_req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/vnd.github.v3+json",
+                        "Content-Type": "application/json",
+                        "User-Agent": "UploadScript"
+                    }, method="PUT")
+                    with urllib.request.urlopen(retry_req) as resp2:
+                        return "UPLOADED" if resp2.status in (200, 201) else "FAILED"
+            if e.code in (500, 502, 503, 504) and attempt < 2:
+                import time
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            raise
+        except Exception:
+            if attempt < 2:
+                import time
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            raise
 
 def collect_files(root_dir):
     files_to_upload = []
