@@ -74,15 +74,27 @@ def ask_question(req: AskRequest):
         raise HTTPException(status_code=500, detail=f"RAG pipeline execution failed: {str(e)}")
 
 @router.post("/api/ask-voice", tags=["Voice RAG"])
-async def ask_question_voice(file: UploadFile = File(...), top_k: int = Query(5)):
-    """Receives binary WAV audio file, transcribes it, runs RAG, and returns audio answer + metadata."""
-    content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="Uploaded audio file was empty.")
+async def ask_question_voice(
+    file: UploadFile = File(None),
+    client_transcript: str = Query(None),
+    top_k: int = Query(5)
+):
+    """Receives binary WAV audio file and/or client transcript, runs RAG, and returns audio answer + metadata."""
+    audio_io = None
+    if file is not None:
+        content = await file.read()
+        if content:
+            audio_io = io.BytesIO(content)
 
-    audio_io = io.BytesIO(content)
+    if not audio_io and not client_transcript:
+        raise HTTPException(status_code=400, detail="Uploaded audio file or transcript was empty.")
+
     try:
-        response = rag_pipeline_service.answer_question_voice(audio_io, top_k=top_k)
+        response = rag_pipeline_service.answer_question_voice(
+            audio_data=audio_io,
+            top_k=top_k,
+            client_transcript=client_transcript
+        )
         return response
     except ValueError as ve:
         logger.warning(f"Voice query input error: {ve}")
