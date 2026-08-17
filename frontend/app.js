@@ -243,10 +243,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 float threshold = bayerDither(gl_FragCoord.xy);
                 float shade     = step(threshold, intensity);
 
-                // Rich Solar Gold & Amber Palette
-                vec3 goldLight = vec3(0.99, 0.88, 0.35); // Solar Gold
-                vec3 amberDeep = vec3(0.85, 0.52, 0.08); // Warm Amber
-                vec3 color     = mix(amberDeep, goldLight, clamp(intensity * 1.2, 0.0, 1.0));
+                // Clean Natural Coastal Sage & Forest Palette
+                vec3 sageLight  = vec3(0.65, 0.88, 0.78); // Coastal Sage / Mint
+                vec3 forestDeep = vec3(0.14, 0.28, 0.23); // Deep Forest #23483B
+                vec3 color      = mix(forestDeep, sageLight, clamp(intensity * 1.2, 0.0, 1.0));
 
                 gl_FragColor = vec4(color * shade, shade * 0.98);
             }
@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             resize();
             gl.useProgram(prog);
-            gl.clearColor(0.008, 0.03, 0.02, 1.0);
+            gl.clearColor(0.137, 0.282, 0.231, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             // Subtle gentle breath when resting idle
@@ -305,14 +305,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Dynamically scale the outer orb wrapper based on vocal amplitude
             if (sphereWrapper) {
-                const scale       = 1.0 + amplitude * 0.12;
-                const glowSize    = 30 + amplitude * 160;
-                const glowOpacity = 0.15 + amplitude * 0.65;
+                const scale       = 1.0 + amplitude * 0.10;
+                const glowSize    = 20 + amplitude * 120;
+                const glowOpacity = 0.15 + amplitude * 0.50;
                 sphereWrapper.style.transform = `scale(${scale.toFixed(4)})`;
                 sphereWrapper.style.boxShadow = `
-                    0 0 0 1.5px rgba(251,191,36,${(0.3 + amplitude * 0.5).toFixed(3)}),
-                    0 0 ${glowSize.toFixed(1)}px rgba(251,191,36,${glowOpacity.toFixed(3)}),
-                    0 0 ${(glowSize * 1.6).toFixed(1)}px rgba(16,185,129,${(glowOpacity * 0.45).toFixed(3)})
+                    0 0 0 2px rgba(85,123,103,${(0.35 + amplitude * 0.4).toFixed(3)}),
+                    0 6px ${glowSize.toFixed(1)}px rgba(35,72,59,${glowOpacity.toFixed(3)}),
+                    0 0 ${(glowSize * 1.4).toFixed(1)}px rgba(104,159,147,${(glowOpacity * 0.35).toFixed(3)})
                 `;
             }
 
